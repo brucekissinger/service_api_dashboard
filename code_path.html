@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252"/>
+    <title>Code Path</title>
+
+    <!-- link to JQuery and DataTables javascript libraries -->
+    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="http://cdn.datatables.net/1.10.4/js/jquery.dataTables.min.js"></script>
+    <script src="http://cdn.datatables.net/plug-ins/9dcbecd42ad/integration/jqueryui/dataTables.jqueryui.js"></script>
+
+    <!-- link to JQuery and DataTables CSS definitions -->
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+    <link rel="stylesheet" href="http://cdn.datatables.net/plug-ins/9dcbecd42ad/integration/jqueryui/dataTables.jqueryui.css" />
+
+    <!-- define an internal style -->
+    <style type="text/css">
+        .right {
+            float:right;
+        }
+    </style>
+
+<script type="text/javascript">
+var web_socket = undefined;
+var host_url = "ws://127.0.0.1:6464";
+var service_name = "/cloudi/api/rpc/code_path.erl";
+var request_type = "get";
+
+
+function is(type, obj) {
+    if (obj === undefined)
+        return type === 'undefined';
+    else if (obj === null)
+        return type === 'null';
+    else
+        return type === Object.prototype.toString.call(obj).slice(8, -1);
+}
+
+String.prototype.startsWith = function (str) {
+    return this.slice(0, str.length) == str;
+};
+
+
+function send() {
+	// if the web socket is undefined then display an error
+	if (web_socket == undefined) {
+		$('#connectionStatus').text("Not connected");
+		open();
+	}
+
+	// if the web socket is in an open status then send the request
+	if (web_socket.readyState == web_socket.OPEN) {
+    		web_socket.send(request_type);
+    		//console.log("Request (out): " + request_type);
+	}
+}
+
+function open() {
+    if (! ("WebSocket" in window)) {
+      	$('#connectionStatus').text("Not connected");
+        alert("This browser does not support WebSockets");
+        return;
+    }
+    
+    $('#connectionStatus').text("Connecting");
+    web_socket = new WebSocket(host_url + service_name);
+
+    console.log("Connecting to " + host_url + service_name);
+
+    // define function that is called when the web socket is opened
+    web_socket.onopen = function() {
+        $('#connectionStatus').text("Connected");
+        console.log("Connected");
+	send();
+    };
+
+    handle_message = function (data) {
+        if (data.startsWith("notification:")) {
+            // client state check to determine this is an incoming
+            // service request, not an incoming response
+            console.log("Request (in): " + data);
+
+            var response = "ok";
+            web_socket.send(response);
+            console.log("Response (in): " + response);
+
+        }
+        else {
+            //console.log("Response (out): " + data);
+
+		if (data != "got connect! yay!") {
+
+			// attempt to parse the data response
+			var start = 0;
+			var end = 0;
+			var code_path_entries = [];
+			var pathName = "";
+
+			do {
+				// parse the service id
+				start = data.indexOf("\"", end);
+
+				if (start > 0) {
+					end = data.indexOf(",", start);
+					if (end == -1) {
+						pathName = data.substring(start+1, data.indexOf("\"]", start));
+					} else  {
+						pathName = data.substring(start+1, end-1);
+					} 
+					var codePathEntry = new Object([pathName]);
+					code_path_entries[code_path_entries.length] = codePathEntry;
+				} 
+
+			} while (start > 0 && end > 0);
+
+			// display the code path entries in the table
+      			updateTable(code_path_entries);
+	 
+		}
+        }
+    };
+
+  web_socket.onmessage = function (evt) {
+        var data = evt.data;
+        if (is("Blob", data)) {
+            // for the example, treat binary as text
+            var reader = new FileReader();
+            reader.readAsText(data, "text/plain");
+            reader.onload = function (reader_evt) {
+                data = reader_evt.target.result;
+                handle_message(data);
+            };
+        }
+        else {
+            handle_message(data);
+        }
+    };
+
+    web_socket.onclose = function() {
+        web_socket = undefined;
+        
+      	$('#connectionStatus').text("Not connected");
+        console.log("Connection closed");        
+    };
+}
+
+function close() {
+    $('#connectionStatus').text("Not connected");
+
+    if (web_socket == undefined) {    
+        return;
+    }
+    web_socket.close();
+}
+
+</script>
+
+
+</head>
+<body>
+    <script type="text/javascript">
+    
+      // This function is called by the server when data is ready to be processed
+      function updateTable(codePathEntries) {
+
+          // clear table
+          var oTable = $('#codePathTable').dataTable();
+          oTable.fnClearTable();
+
+          // process each object in the array            
+          for (i = 0; i < codePathEntries.length; i++) {
+
+		codePathEntry = codePathEntries[i];
+
+              	oTable.fnAddData([
+		        codePathEntry[0] 
+		]);
+
+          }
+
+          // hide the loading message
+          $('#loadingMessage').hide();
+      }
+
+    </script>
+    <div id="logo">
+      <img class="right" src="powered_by_cloudi.png"></img>
+      <h1>Code Path</h1>
+    </div>
+    
+    <div id="loadingMessage">
+      <h2>Waiting for data...</h2>
+    </div>
+
+	<div>
+		<button class="left" onClick="send();">Refresh Now</button>
+		<label class="right" id="connectionStatus"></label>
+	</div>
+
+
+    <table id="codePathTable" class="display">
+      <thead>
+        <tr>
+          <th>Directory Path</th>
+        </tr>
+      </thead>
+       
+      <tbody id="codePathTableBody"></tbody>
+    </table>
+    
+    <div>
+        <label class="right" id="lastUpdated"></label>
+    </div>
+    
+    
+
+    <script type="text/javascript">
+	
+	$(document).ready(function () {
+
+		// change the table attributes to support jQuery styles
+		$('#codePathTable').dataTable( {
+		  "bJQueryUI" : true, 
+		  "sPaginationType" : "full_numbers"
+		});
+
+		// clear the table upon first displaying the page
+		var oTable = $('#codePathTable').dataTable();
+		oTable.fnClearTable();
+
+		// show the loading message
+		$('#loadingMessage').show();
+
+		// set the connection status 
+		$('#connectionStatus').text("Not connected");
+
+		// call the service request function now
+		send();
+
+		// call the service request function every 60 seconds
+		setInterval("send();",60000); 
+	});
+
+	
+    </script>
+  </body>
+</html>
