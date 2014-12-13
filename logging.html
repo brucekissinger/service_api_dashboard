@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=windows-1252"/>
-    <title>Code Path</title>
+    <title>Logging</title>
 
     <!-- link to JQuery and DataTables javascript libraries -->
     <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
@@ -23,9 +23,10 @@
 <script type="text/javascript">
 var host_url = "ws://127.0.0.1:6464";
 var service_host = "http://localhost:6467";
-var service_name = "/cloudi/api/rpc/code_path.erl";
-var add_path_service_name = "/cloudi/api/erlang/code_path_add";
-var remove_path_service_name = "/cloudi/api/erlang/code_path_remove";
+var service_name = "/cloudi/api/erlang/logging";
+var logging_file_set_service_name = "/cloudi/api/erlang/logging_file_set";
+var logging_level_set_service_name = "/cloudi/api/erlang/logging_level_set";
+var logging_syslog_set_service_name = "/cloudi/api/erlang/logging_syslog_set";
 var request_type = "get";
 var web_socket = undefined;
 
@@ -89,36 +90,16 @@ function open() {
 
         }
         else {
-            //console.log("Response (out): " + data);
+            console.log("Response (out): " + data);
 
 		if (data != "got connect! yay!") {
+		
+		  // update the current configuration
+        	  $('#current_configuration').text(data);
 
-			// attempt to parse the data response
-			var start = 0;
-			var end = 0;
-			var code_path_entries = [];
-			var pathName = "";
+                 // hide the loading message
+                 $('#loadingMessage').hide();
 
-			do {
-				// parse the service id
-				start = data.indexOf("\"", end);
-
-				if (start > 0) {
-					end = data.indexOf(",", start);
-					if (end == -1) {
-						pathName = data.substring(start+1, data.indexOf("\"]", start));
-					} else  {
-						pathName = data.substring(start+1, end-1);
-					} 
-					var codePathEntry = new Object([pathName]);
-					code_path_entries[code_path_entries.length] = codePathEntry;
-				} 
-
-			} while (start > 0 && end > 0);
-
-			// display the code path entries in the table
-      			updateTable(code_path_entries);
-	 
 		}
         }
     };
@@ -157,19 +138,6 @@ function close() {
 }
 
 
-function toggle_manage_buttons() {
-	// always show the add button
-	$('#add_button').show();
-
-	var codePath = $('#codePath').text();
-	if (codePath.length > 0) {
-		$('#remove_button').show();
-
-	} else {
-		$('#remove_button').hide();
-        }	
-}
-
 function createCORSRequest(method, url) {
   console.log("Creating CORS Request " + method + " " + url);
 
@@ -198,10 +166,10 @@ function createCORSRequest(method, url) {
 }
 
 
-function remove_path(codePath) {
+function setLevel() {
 
-    var remove_path_service_url = service_host + remove_path_service_name;
-    var xhr = createCORSRequest('POST', remove_path_service_url);
+    var service_url = service_host + logging_level_set_service_name;
+    var xhr = createCORSRequest('POST', service_url);
     if (!xhr) {
       throw new Error('CORS not supported');
     }
@@ -209,59 +177,18 @@ function remove_path(codePath) {
     xhr.onload = function() {
       var responseText = xhr.responseText;
       console.log(responseText);
-      // process the response.
-      return;
+      // process the response
     };
 
     xhr.onerror = function(xhr, textStatus, errorThrown) {
       console.log('There was an error.  Status ' + xhr.status);
       console.log('Error response=' + xhr.responseText);
-      return;
     };
 
-    xhr.send('\"' + codePath + '\"');
-
-    // clear the codePath
-    $('#codePath').text("");	
-
-    // hide the manage code path buttons
-    toggle_manage_buttons();
-
-    // refresh the information on the page
-    send();
-} 
-
-function add_path(codePath) {
-
-    var add_path_service_url = service_host + add_path_service_name;
-    var xhr = createCORSRequest('POST', add_path_service_url);
-    if (!xhr) {
-      throw new Error('CORS not supported');
-    }
-
-    xhr.onload = function() {
-      var responseText = xhr.responseText;
-      console.log(responseText);
-      // process the response.
-      return;
-    };
-
-    xhr.onerror = function() {
-      console.log('There was an error!');
-      return;
-    };
-
-    xhr.send('\"' + codePath + '\"');
-
-    // clear the code path
-    $('#codePath').text("");	
-
-    // hide the manage code path buttons
-    toggle_manage_buttons();
-
-    // refresh the information on the page
-    send();
-} 
+    var value_to_send = $("#set_level_input").val();
+    console.log("Sending value " + value_to_send);
+    xhr.send(value_to_send);
+}
 
 
 </script>
@@ -296,7 +223,7 @@ function add_path(codePath) {
     </script>
     <div id="logo">
       <img class="right" src="powered_by_cloudi.png"></img>
-      <h1>Code Path</h1>
+      <h1>Logging</h1>
     </div>
     
     <div id="loadingMessage">
@@ -307,35 +234,42 @@ function add_path(codePath) {
 		<button class="left" onClick="send();">Refresh Now</button>
 		<label hidden="true" id="codePath"></label>
 		<label class="right" id="connectionStatus"></label>
-		<button id="remove_button">Remove Path</button>
-		<button id="add_button">Add Path</button>
 	</div>
 
+    <div>
+	<label for"current_configuration">Current configuration:</label>
+	<label id="current_configuration"></label>
+    <div>
+   
+    <div>
+	<button onclick="setFile();">Set File</button>
+        <input id="set_file_input" type="text"></input>
+    </div>
 
-    <table id="codePathTable" class="display">
-      <thead>
-        <tr>
-          <th>Directory Path</th>
-        </tr>
-      </thead>
-       
-      <tbody id="codePathTableBody"></tbody>
-    </table>
-    
-    
+    <div>
+	<button onclick="setLevel();">Set Level</button>
+        <input id="set_level_input" type="text"></input>
+    </div>
+
+    <div>
+	<button onclick="setSyslog();">Set Syslog</button>
+        <input id="set_syslog_input" type="text"></input>
+    </div>
+
+    <div>
+	<button onclick="setFormatter();">Set Formatter</button>
+        <input id="set_formatter_input" type="text"></input>
+    </div>
+
+ 
+    <div>
+	<button onclick="setFile();">Set File</button>
+        <input id="set_file_input" type="text"></input>
+    </div>
+
     <script type="text/javascript">
 	
 	$(document).ready(function () {
-
-		// change the table attributes to support jQuery styles
-		$('#codePathTable').dataTable( {
-		  "bJQueryUI" : true, 
-		  "sPaginationType" : "full_numbers"
-		});
-
-		// clear the table upon first displaying the page
-		var oTable = $('#codePathTable').dataTable();
-		oTable.fnClearTable();
 
 		// show the loading message
 		$('#loadingMessage').show();
@@ -345,63 +279,9 @@ function add_path(codePath) {
 
 		// call the service request function now
 		send();
-
-		// call the service request function every 60 seconds
-		setInterval("send();",60000); 
-
-                // hide the manage code path buttons
-                toggle_manage_buttons();
-
-		// define a function that will highlight a row when selected
-                $('#codePathTable tbody').on( 'click', 'tr', function () {
-
-			// toggle the row highlighting color
-		        if ( $(this).hasClass('selected') ) {
-            			$(this).removeClass('selected');
-        		}
-		        else {
-            			oTable.$('tr.selected').removeClass('selected');
-            			$(this).addClass('selected');
-        		}
-
-			var table_api = $('#codePathTable').dataTable().api();
-
-			// save the code path in a hidden HTML object for use later
-			var codePathEntry = table_api.row( this ).data();
-			console.log("codePath is " + codePathEntry[0]);
-		        $('#codePath').text(codePathEntry[0]);
-                
-                        // hide the manage code paths buttons
-                        toggle_manage_buttons();
-    		} );
-
-
 	});
 
-	
-      // define a function to add a new code path
-      $('#add_button').click( function () {
 
-	var codePath = prompt("Enter new code path", "");
-	if (codePath != null && codePath.length > 0) {
-		console.log("Code Path is " + codePath);
-		add_path(codePath);
-	}
-
-      } );
-
-      // define a function to remove the selected code path
-      $('#remove_button').click( function () {
-
-	var codePath = $('#codePath').text();
-	if (codePath.length > 0) {
-		console.log("Code Path is " + codePath);
-		remove_path(codePath);
-	}
-
-      } );
-
-	
     </script>
   </body>
 </html>

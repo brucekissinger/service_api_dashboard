@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=windows-1252"/>
-    <title>Service Summary</title>
+    <title>Nodes</title>
 
     <!-- link to JQuery and DataTables javascript libraries -->
     <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
@@ -23,10 +23,9 @@
 <script type="text/javascript">
 var host_url = "ws://127.0.0.1:6464";
 var service_host = "http://localhost:6467";
-var service_name = "/cloudi/api/rpc/services.erl";
-var restart_service_name = "/cloudi/api/rpc/services_restart.erl";
-var remove_service_name = "/cloudi/api/rpc/services_remove.erl";
-var service_subscriptions_name = "/cloudi/api/rpc/service_subscriptions.erl";
+var service_name = "/cloudi/api/rpc/nodes_get.erl";
+var add_node_service_name = "/cloudi/api/rpc/nodes_add.erl";
+var remove_node_service_name = "/cloudi/api/rpc/nodes_remove.erl";
 var request_type = "get";
 var web_socket = undefined;
 
@@ -90,11 +89,12 @@ function open() {
 
         }
         else {
-            //console.log("Response (out): " + data);
+            console.log("Response (out): " + data);
 
 		if (data != "got connect! yay!") {
 
-			var service_entries = [];
+
+			var node_entries = [];
 
 			// attempt to parse the data response
 	              	//console.log("parsing starts.  data is length " + data.length);
@@ -103,49 +103,34 @@ function open() {
 			var end = 0;
 
 			do {
-				// parse the service id
-				start = data.indexOf("{\"", end);
-				end = data.indexOf(",", start);
-				var serviceID = data.substring(start+2, end-1);
-				//console.log("serviceID= [" + serviceID+ "]");
-
-				// parse the type
-				//   {internal,
+				// parse the discovery type
 				start = data.indexOf("{", end);
-				end = data.indexOf(",", start);
-				var serviceType = data.substring(start+1, end);
-			
-				// parse the service path
-				//   "/cloudi/api/",
-				start = data.indexOf("\"", end);
-				end = data.indexOf("\",", start);
-				var servicePath = data.substring(start+1, end);
 
-				// parse the module name
-				//   "/cloudi/api/",
-				start = end+2;
-				end = data.indexOf(",", start);
-				var serviceName = data.substring(start, end);
-				//console.log("serviceName = [" + serviceName + "]");
-			
+				if (start > 0) {
+    				  end = data.indexOf(",", start);
+				  if (end > 0) {
+				    var discoveryType  = data.substring(start+1, end);
+  				    console.log("discoveryType= [" + discoveryType + "]");
 
-				// skip to the next entry
-				start = end+1;
-				end = data.indexOf("}},", start);
-				var miscStuff = data.substring(start, end);
-				//console.log("miscStuff = " + miscStuff);
+                                
+			   	    // parse the options 
+				    start = data.indexOf("[", end);
+				    end = data.indexOf("]", start);
+				    var options = data.substring(start+1, end+1);
 			
-				var serviceEntry = new Object([serviceName, servicePath, serviceType, serviceID]);
-				//console.log("serviceEntry=" + serviceEntry);
+			
+				    var nodeEntry = new Object([discoveryType, options]);
 				
-				// add the serviceEntry object to the array
-				service_entries[service_entries.length] = serviceEntry;
-				//console.log("service entries: " + service_entries);
+				    // add the nodeEntry object to the array
+				    node_entries[node_entries.length] = nodeEntry;
+                                }
+			      }
+			//console.log("service entries: " + service_entries);
 
-			} while (end > 0);
+			} while (start > 0 && end > 0);
 
-			// display the service entries in the table
-      			updateTable(service_entries);
+			// display the node entries in the table
+      			updateTable(node_entries);
 	 
 		}
         }
@@ -185,15 +170,16 @@ function close() {
 }
 
 function toggle_manage_buttons() {
-	var serviceID = $('#serviceID').text();
-	if (serviceID.length > 0) {
+	// always show the add button
+	$('#add_button').show();
+
+	var nodeID = $('#nodeID').text();
+
+	// show the remove button if the node is not an auto discovery node
+	if (nodeID.length > 0 && nodeID != "discovery") {
 		$('#remove_button').show();
-		$('#restart_button').show();
-		$('#show_subscriptions_button').show();
 	} else {
 		$('#remove_button').hide();
-		$('#restart_button').hide();
-		$('#show_subscriptions_button').hide();
         }	
 }
 
@@ -224,10 +210,10 @@ function createCORSRequest(method, url) {
 }
 
 
-function remove_service(serviceID) {
+function remove_node(nodeID) {
 
-    var remove_service_url = service_host + remove_service_name;
-    var xhr = createCORSRequest('POST', remove_service_url);
+    var remove_node_service_url = service_host + remove_node_service_name;
+    var xhr = createCORSRequest('POST', remove_node_service_url);
     if (!xhr) {
       throw new Error('CORS not supported');
     }
@@ -242,22 +228,19 @@ function remove_service(serviceID) {
       console.log('There was an error!');
     };
 
-    xhr.send('[\"' + serviceID + '\"]');
+    xhr.send('[\"' + nodeID + '\"]');
 
-    // clear the serviceID
-    $('#serviceID').text("");	
+    // clear the nodeID
+    $('#nodeID').text("");	
 
-    // hide the manage service buttons
+    // hide the manage node buttons
     toggle_manage_buttons();
-
-    // refresh the information shown on the screen
-    send();
 } 
 
-function restart_service(serviceID) {
+function add_node(nodeID) {
 
-    var restart_service_url = service_host + restart_service_name;
-    var xhr = createCORSRequest('POST', restart_service_url);
+    var add_node_service_url = service_host + add_node_service_name;
+    var xhr = createCORSRequest('POST', add_node_service_url);
     if (!xhr) {
       throw new Error('CORS not supported');
     }
@@ -272,44 +255,12 @@ function restart_service(serviceID) {
       console.log('There was an error!');
     };
 
-    xhr.send('[\"' + serviceID + '\"]');
+    xhr.send('[\"' + nodeID + '\"]');
 
-    // clear the serviceID
-    $('#serviceID').text("");	
+    // clear the nodeID
+    $('#nodeID').text("");	
 
-    // hide the manage service buttons
-    toggle_manage_buttons();
-
-    // refresh the information shown on the screen
-    send();
-} 
-
-function show_service_subscriptions (serviceID) {
-
-    var service_subscriptions_url = service_host + service_subscriptions_name;
-console.log("Flag A url = [" + service_subscriptions_url);
-
-    var xhr = createCORSRequest('POST', service_subscriptions_url);
-    if (!xhr) {
-      throw new Error('CORS not supported');
-    }
-
-    xhr.onload = function() {
-      var responseText = xhr.responseText;
-      console.log(responseText);
-      // process the response.
-    };
-
-    xhr.onerror = function() {
-      console.log('There was an error!');
-    };
-
-    xhr.send('[\"' + serviceID + '\"]');
-
-    // clear the serviceID
-    $('#serviceID').text("");	
-
-    // hide the manage service buttons
+    // hide the manage node buttons
     toggle_manage_buttons();
 } 
 
@@ -321,22 +272,20 @@ console.log("Flag A url = [" + service_subscriptions_url);
     <script type="text/javascript">
     
       // This function is called by the server when data is ready to be processed
-      function updateTable(serviceEntries) {
+      function updateTable(nodeEntries) {
 
           // clear table
-          var oTable = $('#servicesTable').dataTable();
+          var oTable = $('#nodesTable').dataTable();
           oTable.fnClearTable();
 
           // process each endpoint event in the array            
-          for (i = 0; i < serviceEntries.length; i++) {
+          for (i = 0; i < nodeEntries.length; i++) {
 
-		serviceEntry = serviceEntries[i];
+		nodeEntry = nodeEntries[i];
 
               	oTable.fnAddData([
-		        serviceEntry[0], 
-		        serviceEntry[1], 
-		        serviceEntry[2],
-		        serviceEntry[3]  
+		        nodeEntry[0], 
+		        nodeEntry[1]  
 		]);
 
           }
@@ -350,7 +299,7 @@ console.log("Flag A url = [" + service_subscriptions_url);
 
     <div id="logo">
       <img class="right" src="powered_by_cloudi.png"></img>
-      <h1>Service Summary</h1>
+      <h1>Nodes</h1>
     </div>
     
     <div id="loadingMessage">
@@ -359,25 +308,22 @@ console.log("Flag A url = [" + service_subscriptions_url);
 
 	<div>
 		<button class="left" onClick="send();">Refresh Now</button>
-    		<label hidden="true" id="serviceID"></label>
+    		<label hidden="true" id="nodeID"></label>
 		<label class="right" id="connectionStatus"></label>
-		<button id="remove_button">Remove Service</button>
-		<button id="restart_button">Restart Service</button>
-		<button id="subscriptions_button">Show Subscriptions</button>
+		<button id="remove_button">Remove Node</button>
+		<button id="add_button">Add Node</button>
 	</div>
 
 
-    <table id="servicesTable" class="display">
+    <table id="nodesTable" class="display">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Path</th>
-          <th>Type</th>
-          <th>ID</th>
+          <th>Discovery Type</th>
+          <th>Options</th>
         </tr>
       </thead>
        
-      <tbody id="servicesTableBody"></tbody>
+      <tbody id="nodesTableBody"></tbody>
     </table>
   
 
@@ -385,13 +331,13 @@ console.log("Flag A url = [" + service_subscriptions_url);
 	$(document).ready(function () {
 
 		// change the table attributes to support jQuery styles
-		$('#servicesTable').dataTable( {
+		$('#nodesTable').dataTable( {
 		  "bJQueryUI" : true, 
 		  "sPaginationType" : "full_numbers"
 		});
 
 		// clear the table upon first displaying the page
-		var oTable = $('#servicesTable').dataTable();
+		var oTable = $('#nodesTable').dataTable();
 		oTable.fnClearTable();
 
 		// show the loading message
@@ -410,7 +356,7 @@ console.log("Flag A url = [" + service_subscriptions_url);
                 toggle_manage_buttons();
 
 		// define a function that will highlight a row when selected
-                $('#servicesTable tbody').on( 'click', 'tr', function () {
+                $('#nodesTable tbody').on( 'click', 'tr', function () {
 
 			// toggle the row highlighting color
 		        if ( $(this).hasClass('selected') ) {
@@ -421,58 +367,42 @@ console.log("Flag A url = [" + service_subscriptions_url);
             			$(this).addClass('selected');
         		}
 
-			var table_api = $('#servicesTable').dataTable().api();
-//			idx  = table_api.row(this).index();
-//			console.log("index is " + idx);
+			var table_api = $('#nodesTable').dataTable().api();
 
-//			console.log( table_api.row( this ).data() );
-
-			// save the ServiceID in a hidden HTML object for use later
-			var serviceEntry = table_api.row( this ).data();
-//			console.log("serviceID is " + serviceEntry[3]);
-		        $('#serviceID').text(serviceEntry[3]);
+			// save the node ID in a hidden HTML object for use later
+			var nodeEntry = table_api.row( this ).data();
+			console.log("nodeID is " + nodeEntry[0]);
+		        $('#nodeID').text(nodeEntry[0]);
                 
-                        // hide the manage service buttons
+                        // hide the manage nodes buttons
                         toggle_manage_buttons();
     		} );
 
 	});
 
 	
-      // define a function to restart the selected service 
-      $('#restart_button').click( function () {
+      // define a function to add a new node
+      $('#add_button').click( function () {
 
-	var serviceID = $('#serviceID').text();
-	if (serviceID.length > 0) {
-		console.log("Service ID is " + serviceID);
-		restart_service(serviceID);
+	var nodeID = prompt("Enter new node", "");
+
+	if (nodeID != null && nodeID.length > 0) {
+		console.log("Node ID is " + nodeID);
+		add_node(nodeID);
 	}
 
       } );
 
-      // define a function to remove the selected service 
+      // define a function to remove the selected node
       $('#remove_button').click( function () {
 
-	var serviceID = $('#serviceID').text();
-	if (serviceID.length > 0) {
-		console.log("Service ID is " + serviceID);
-		remove_service(serviceID);
+	var nodeID = $('#nodeID').text();
+	if (nodeID.length > 0 && nodeID != "discovery") {
+		console.log("Node ID is " + nodeID);
+		remove_node(nodeID);
 	}
 
       } );
-
-
-      // define a function to show subscriptions for the selected service 
-      $('#subscriptions_button').click( function () {
-
-	var serviceID = $('#serviceID').text();
-	if (serviceID.length > 0) {
-		console.log("Service ID is " + serviceID);
-		show_service_subscriptions(serviceID);
-	}
-
-      } );
-
 
 
 
