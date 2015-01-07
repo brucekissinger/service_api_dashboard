@@ -43,19 +43,18 @@ String.prototype.startsWith = function (str) {
     return this.slice(0, str.length) == str;
 };
 
-
 function send() {
-	// if the web socket is undefined then display an error
-	if (web_socket == undefined) {
-		$('#connectionStatus').text("Not connected");
-		open();
-	}
+        // if the web socket is undefined then display an error
+        if (web_socket == undefined) {
+                $('#connectionStatus').text("Not connected");
+                open();
+        }
 
-	// if the web socket is in an open status then send the request
-	if (web_socket.readyState == web_socket.OPEN) {
-    		web_socket.send(request_type);
-    		//console.log("Request (out): " + request_type);
-	}
+        // if the web socket is in an open status then send the request
+        if (web_socket.readyState == web_socket.OPEN) {
+                web_socket.send(request_type);
+                //console.log("Request (out): " + request_type);
+        }
 }
 
 function open() {
@@ -74,7 +73,7 @@ function open() {
     web_socket.onopen = function() {
         $('#connectionStatus').text("Connected");
         console.log("Connected");
-	send();
+        send();
     };
 
     handle_message = function (data) {

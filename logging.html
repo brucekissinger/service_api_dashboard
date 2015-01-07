@@ -248,7 +248,13 @@ function setLevel() {
 
     <div>
 	<button onclick="setLevel();">Set Level</button>
-        <input id="set_level_input" type="text"></input>
+	<select id="set_level_input">
+		<option value="error">Error</option>
+		<option value="warn">Warn</option>
+		<option value="info">Info</option>
+		<option value="debug">Debug</option>
+		<option value="trace">Trace</option>
+	</select>
     </div>
 
     <div>

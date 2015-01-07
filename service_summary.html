@@ -44,20 +44,20 @@ String.prototype.startsWith = function (str) {
     return this.slice(0, str.length) == str;
 };
 
-
 function send() {
-	// if the web socket is undefined then try to open it 
-	if (web_socket == undefined) {
-		$('#connectionStatus').text("Not connected");
-		open();
-	}
+        // if the web socket is undefined then display an error
+        if (web_socket == undefined) {
+                $('#connectionStatus').text("Not connected");
+                open();
+        }
 
-	// if the web socket is in an open status then send the request
-	if (web_socket.readyState == web_socket.OPEN) {
-    		web_socket.send(request_type);
-    		//console.log("Request (out): " + request_type);
-	}
+        // if the web socket is in an open status then send the request
+        if (web_socket.readyState == web_socket.OPEN) {
+                web_socket.send(request_type);
+                //console.log("Request (out): " + request_type);
+        }
 }
+
 
 function open() {
     if (! ("WebSocket" in window)) {
@@ -75,7 +75,7 @@ function open() {
     web_socket.onopen = function() {
         $('#connectionStatus').text("Connected");
         console.log("Connected");
-	send();
+        send();
     };
 
     handle_message = function (data) {
@@ -189,11 +189,11 @@ function toggle_manage_buttons() {
 	if (serviceID.length > 0) {
 		$('#remove_button').show();
 		$('#restart_button').show();
-		$('#show_subscriptions_button').show();
+		$('#subscriptions_button').show();
 	} else {
 		$('#remove_button').hide();
 		$('#restart_button').hide();
-		$('#show_subscriptions_button').hide();
+		$('#subscriptions_button').hide();
         }	
 }
 
@@ -205,14 +205,14 @@ function createCORSRequest(method, url) {
 
     // Check if the XMLHttpRequest object has a "withCredentials" property.
     // "withCredentials" only exists on XMLHTTPRequest2 objects.
-    xhr.open(method, url, true);
+    xhr.open(method, url, false);	// create an asynchronous request
 
   } else if (typeof XDomainRequest != "undefined") {
 
     // Otherwise, check if XDomainRequest.
     // XDomainRequest only exists in IE, and is IE's way of making CORS requests.
     xhr = new XDomainRequest();
-    xhr.open(method, url);
+    xhr.open(method, url, false);	// create an asynchronous request
 
   } else {
 
@@ -262,16 +262,27 @@ function restart_service(serviceID) {
       throw new Error('CORS not supported');
     }
 
-    xhr.onload = function() {
+    // create a load event handler
+    xhr.onload = function(e) {
+      console.log("Onload event received. Event=" + e);
       var responseText = xhr.responseText;
       console.log(responseText);
       // process the response.
     };
 
-    xhr.onerror = function() {
-      console.log('There was an error!');
+    // create an error event handler
+    xhr.onerror = function(e) {
+      console.log("On error event received.  Event=" + e + " with type " + e.type);
+      var responseText = xhr.responseText;
+      console.log(responseText);
     };
 
+    // create a progress event handler
+    xhr.onprogress = function(e) {
+      console.log("Progress event received.  Event=" + e);
+    };
+
+    // send the request
     xhr.send('[\"' + serviceID + '\"]');
 
     // clear the serviceID
@@ -287,24 +298,32 @@ function restart_service(serviceID) {
 function show_service_subscriptions (serviceID) {
 
     var service_subscriptions_url = service_host + service_subscriptions_name;
-console.log("Flag A url = [" + service_subscriptions_url);
+    console.log("Flag A url = [" + service_subscriptions_url);
 
     var xhr = createCORSRequest('POST', service_subscriptions_url);
     if (!xhr) {
       throw new Error('CORS not supported');
     }
 
-    xhr.onload = function() {
+    
+    // create a load event handler
+    xhr.onload = function(e) {
+      console.log("Onload event received. Event=" + e);
       var responseText = xhr.responseText;
       console.log(responseText);
       // process the response.
     };
 
-    xhr.onerror = function() {
-      console.log('There was an error!');
+/*
+    // create an error event handler
+    xhr.onerror = function(e) {
+      console.log("On error event received.  Event=" + e + " with type " + e.type);
+      var responseText = xhr.responseText;
+      console.log(responseText);
     };
-
-    xhr.send('[\"' + serviceID + '\"]');
+*/
+    // send the request
+    xhr.send('\"' + serviceID + '\"');
 
     // clear the serviceID
     $('#serviceID').text("");	
