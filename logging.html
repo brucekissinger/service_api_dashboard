@@ -220,12 +220,17 @@ function setLevel() {
     xhr.onload = function() {
       var responseText = xhr.responseText;
       console.log(responseText);
-      // process the response
+
+      // refresh the information shown on the screen
+      send();
     };
 
     xhr.onerror = function(xhr, textStatus, errorThrown) {
       console.log('There was an error.  Status ' + xhr.status);
       console.log('Error response=' + xhr.responseText);
+
+      // refresh the information shown on the screen
+      send();
     };
 
     var value_to_send = $("#set_level_input").val();
@@ -244,12 +249,17 @@ function setFile() {
     xhr.onload = function() {
       var responseText = xhr.responseText;
       console.log(responseText);
-      // process the response
+
+      // refresh the information shown on the screen
+      send();
     };
 
     xhr.onerror = function(xhr, textStatus, errorThrown) {
       console.log('There was an error.  Status ' + xhr.status);
       console.log('Error response=' + xhr.responseText);
+
+      // refresh the information shown on the screen
+      send();
     };
 
     var value_to_send = $("#set_file_input").val();
@@ -268,12 +278,17 @@ function setRedirect() {
     xhr.onload = function() {
       var responseText = xhr.responseText;
       console.log(responseText);
-      // process the response
+
+      // refresh the information shown on the screen
+      send();
     };
 
     xhr.onerror = function(xhr, textStatus, errorThrown) {
       console.log('There was an error.  Status ' + xhr.status);
       console.log('Error response=' + xhr.responseText);
+
+      // refresh the information shown on the screen
+      send();
     };
 
     var value_to_send = $("#set_redirect_input").val();
@@ -292,12 +307,17 @@ function setSyslog() {
     xhr.onload = function() {
       var responseText = xhr.responseText;
       console.log(responseText);
-      // process the response
+
+      // refresh the information shown on the screen
+      send();
     };
 
     xhr.onerror = function(xhr, textStatus, errorThrown) {
       console.log('There was an error.  Status ' + xhr.status);
       console.log('Error response=' + xhr.responseText);
+
+      // refresh the information shown on the screen
+      send();
     };
 
     var value_to_send = $("#set_syslog_input").val();
