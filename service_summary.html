@@ -21,7 +21,7 @@
     </style>
 
 <script type="text/javascript">
-var host_url = "ws://127.0.0.1:6464";
+var host_url = "ws://localhost:6464";
 var service_host = "http://localhost:6467";
 var service_name = "/cloudi/api/rpc/services.erl";
 var restart_service_name = "/cloudi/api/rpc/services_restart.erl";
@@ -29,6 +29,7 @@ var remove_service_name = "/cloudi/api/rpc/services_remove.erl";
 var service_subscriptions_name = "/cloudi/api/rpc/service_subscriptions.erl";
 var request_type = "get";
 var web_socket = undefined;
+var subscriptions_web_socket = undefined;
 
 
 function is(type, obj) {
@@ -60,6 +61,7 @@ function send() {
 
 
 function open() {
+
     if (! ("WebSocket" in window)) {
       	$('#connectionStatus').text("Not connected");
         alert("This browser does not support WebSockets");
@@ -94,11 +96,9 @@ function open() {
 
 		if (data != "got connect! yay!") {
 
-			var service_entries = [];
-
 			// attempt to parse the data response
-	              	//console.log("parsing starts.  data is length " + data.length);
-			
+	              	// console.log("parsing starts.  data is length " + data.length);
+			var service_entries = [];
 			var start = 0;
 			var end = 0;
 
@@ -146,7 +146,7 @@ function open() {
 
 			// display the service entries in the table
       			updateTable(service_entries);
-	 
+			
 		}
         }
     };
@@ -182,6 +182,124 @@ function close() {
         return;
     }
     web_socket.close();
+}
+
+function show_service_subscriptions(serviceID) {
+
+    if (! ("WebSocket" in window)) {
+      	$('#connectionStatus').text("Not connected");
+        alert("This browser does not support WebSockets");
+        return;
+    }
+    
+    $('#connectionStatus').text("Connecting");
+    subscriptions_web_socket = new WebSocket(host_url + service_name);
+
+    console.log("Connecting to " + host_url + service_name);
+
+    // define function that is called when the web socket is opened
+    subscriptions_web_socket.onopen = function() {
+        $('#connectionStatus').text("Connected");
+        console.log("Connected");
+        send();
+    };
+
+    handle_message_subscriptions = function (data) {
+        if (data.startsWith("notification:")) {
+            // client state check to determine this is an incoming
+            // service request, not an incoming response
+            console.log("Request (in): " + data);
+
+            var response = "ok";
+            subscriptions_web_socket.send(response);
+            console.log("Response (in): " + response);
+
+        }
+        else {
+            //console.log("Response (out): " + data);
+
+		if (data != "got connect! yay!") {
+
+			// attempt to parse the data response
+	              	 console.log("parsing starts.  data is length " + data.length);
+
+/*
+			var service_entries = [];
+			var start = 0;
+			var end = 0;
+
+			do {
+				// parse the service id
+				start = data.indexOf("{\"", end);
+				end = data.indexOf(",", start);
+				var serviceID = data.substring(start+2, end-1);
+				//console.log("serviceID= [" + serviceID+ "]");
+
+				// parse the type
+				//   {internal,
+				start = data.indexOf("{", end);
+				end = data.indexOf(",", start);
+				var serviceType = data.substring(start+1, end);
+			
+				// parse the service path
+				//   "/cloudi/api/",
+				start = data.indexOf("\"", end);
+				end = data.indexOf("\",", start);
+				var servicePath = data.substring(start+1, end);
+
+				// parse the module name
+				//   "/cloudi/api/",
+				start = end+2;
+				end = data.indexOf(",", start);
+				var serviceName = data.substring(start, end);
+				//console.log("serviceName = [" + serviceName + "]");
+			
+
+				// skip to the next entry
+				start = end+1;
+				end = data.indexOf("}},", start);
+				var miscStuff = data.substring(start, end);
+				//console.log("miscStuff = " + miscStuff);
+			
+				var serviceEntry = new Object([serviceName, servicePath, serviceType, serviceID]);
+				//console.log("serviceEntry=" + serviceEntry);
+				
+				// add the serviceEntry object to the array
+				service_entries[service_entries.length] = serviceEntry;
+				//console.log("service entries: " + service_entries);
+
+			} while (end > 0);
+
+			// display the service entries in the table
+      			updateTable(service_entries);
+*/			
+		}
+        }
+    };
+
+  subscriptions_web_socket.onmessage = function (evt) {
+        var data = evt.data;
+        if (is("Blob", data)) {
+            // for the example, treat binary as text
+            var reader = new FileReader();
+            reader.readAsText(data, "text/plain");
+            reader.onload = function (reader_evt) {
+                data = reader_evt.target.result;
+                handle_message_subscriptions(data);
+
+            };
+        }
+        else {
+            handle_message_subscriptions(data);
+        }
+    };
+
+    subscriptions_web_socket.onclose = function() {
+        subscriptions_web_socket = undefined;
+        
+      	$('#connectionStatus').text("Not connected");
+        console.log("Connection closed");        
+    };
 }
 
 function toggle_manage_buttons() {

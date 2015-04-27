@@ -21,11 +21,12 @@
     </style>
 
 <script type="text/javascript">
-var host_url = "ws://127.0.0.1:6464";
+var host_url = "ws://localhost:6464";
 var service_host = "http://localhost:6467";
 var service_name = "/cloudi/api/erlang/logging";
 var logging_file_set_service_name = "/cloudi/api/erlang/logging_file_set";
 var logging_level_set_service_name = "/cloudi/api/erlang/logging_level_set";
+var logging_redirect_set_service_name = "/cloudi/api/erlang/logging_redirect_set";
 var logging_syslog_set_service_name = "/cloudi/api/erlang/logging_syslog_set";
 var request_type = "get";
 var web_socket = undefined;
@@ -96,6 +97,48 @@ function open() {
 		
 		  // update the current configuration
         	  $('#current_configuration').text(data);
+
+		  // parse the log level setting
+	          searchString = "level,";
+		  start = data.indexOf(searchString);
+		  if (start > 0) {
+    		    end = data.indexOf("}", start);
+		    levelValue = data.substring(start + searchString.length, end); 
+	            // set the value of the list 
+                    $("#set_level_input").val(levelValue);
+		  }
+
+
+		  // parse the file setting
+	          searchString = "file,";
+		  start = data.indexOf(searchString);
+		  if (start > 0) {
+    		    end = data.indexOf("}", start);
+		    fileValue = data.substring(start + searchString.length, end); 
+	            // set the value of the input field 
+                    $("#set_file_input").val(fileValue);
+		  }
+
+
+		  // parse the redirect setting 
+	          searchString = "redirect,";
+		  start = data.indexOf(searchString);
+		  if (start > 0) {
+    		    end = data.indexOf("}", start);
+		    redirectValue = data.substring(start + searchString.length, end); 
+	            // set the value of the input field 
+                    $("#set_redirect_input").val(redirectValue);
+		  }
+
+		  // parse the syslog setting 
+	          searchString = "syslog,[";
+		  start = data.indexOf(searchString);
+		  if (start > 0) {
+    		    end = data.indexOf("]", start);
+		    syslogValue = data.substring(start + searchString.length -1, end+1); 
+	            // set the value of the input field 
+                    $("#set_syslog_input").val(syslogValue);
+		  }
 
                  // hide the loading message
                  $('#loadingMessage').hide();
@@ -168,7 +211,7 @@ function createCORSRequest(method, url) {
 
 function setLevel() {
 
-    var service_url = service_host + logging_level_set_service_name;
+    var service_url = service_host +  logging_level_set_service_name;
     var xhr = createCORSRequest('POST', service_url);
     if (!xhr) {
       throw new Error('CORS not supported');
@@ -190,88 +233,138 @@ function setLevel() {
     xhr.send(value_to_send);
 }
 
+function setFile() {
+
+    var service_url = service_host + logging_file_set_service_name;
+    var xhr = createCORSRequest('POST', service_url);
+    if (!xhr) {
+      throw new Error('CORS not supported');
+    }
+
+    xhr.onload = function() {
+      var responseText = xhr.responseText;
+      console.log(responseText);
+      // process the response
+    };
+
+    xhr.onerror = function(xhr, textStatus, errorThrown) {
+      console.log('There was an error.  Status ' + xhr.status);
+      console.log('Error response=' + xhr.responseText);
+    };
+
+    var value_to_send = $("#set_file_input").val();
+    console.log("Sending value " + value_to_send);
+    xhr.send(value_to_send);
+}
+
+function setRedirect() {
+
+    var service_url = service_host + logging_redirect_set_service_name;
+    var xhr = createCORSRequest('POST', service_url);
+    if (!xhr) {
+      throw new Error('CORS not supported');
+    }
+
+    xhr.onload = function() {
+      var responseText = xhr.responseText;
+      console.log(responseText);
+      // process the response
+    };
+
+    xhr.onerror = function(xhr, textStatus, errorThrown) {
+      console.log('There was an error.  Status ' + xhr.status);
+      console.log('Error response=' + xhr.responseText);
+    };
+
+    var value_to_send = $("#set_redirect_input").val();
+    console.log("Sending value " + value_to_send);
+    xhr.send(value_to_send);
+}
+
+function setSyslog() {
+
+    var service_url = service_host + logging_syslog_set_service_name;
+    var xhr = createCORSRequest('POST', service_url);
+    if (!xhr) {
+      throw new Error('CORS not supported');
+    }
+
+    xhr.onload = function() {
+      var responseText = xhr.responseText;
+      console.log(responseText);
+      // process the response
+    };
+
+    xhr.onerror = function(xhr, textStatus, errorThrown) {
+      console.log('There was an error.  Status ' + xhr.status);
+      console.log('Error response=' + xhr.responseText);
+    };
+
+    var value_to_send = $("#set_syslog_input").val();
+    console.log("Sending value " + value_to_send);
+    xhr.send(value_to_send);
+}
 
 </script>
 
 
 </head>
 <body>
-    <script type="text/javascript">
-    
-      // This function is called by the server when data is ready to be processed
-      function updateTable(codePathEntries) {
-
-          // clear table
-          var oTable = $('#codePathTable').dataTable();
-          oTable.fnClearTable();
-
-          // process each object in the array            
-          for (i = 0; i < codePathEntries.length; i++) {
-
-		codePathEntry = codePathEntries[i];
-
-              	oTable.fnAddData([
-		        codePathEntry[0] 
-		]);
-
-          }
-
-          // hide the loading message
-          $('#loadingMessage').hide();
-      }
-
-    </script>
     <div id="logo">
       <img class="right" src="powered_by_cloudi.png"></img>
       <h1>Logging</h1>
+	<label class="right" id="connectionStatus"></label>
     </div>
     
     <div id="loadingMessage">
       <h2>Waiting for data...</h2>
     </div>
-
-	<div>
-		<button class="left" onClick="send();">Refresh Now</button>
-		<label hidden="true" id="codePath"></label>
-		<label class="right" id="connectionStatus"></label>
-	</div>
-
+    
     <div>
-	<label for"current_configuration">Current configuration:</label>
-	<label id="current_configuration"></label>
-    <div>
-   
-    <div>
-	<button onclick="setFile();">Set File</button>
-        <input id="set_file_input" type="text"></input>
+	<h2><label for"current_configuration">Current Configuration:</label></h2>
+	<textarea id="current_configuration" rows="9" cols="100"></textarea>
     </div>
+   
 
     <div>
-	<button onclick="setLevel();">Set Level</button>
-	<select id="set_level_input">
+	<button class="left" onClick="send();">Refresh Current Configuration</button>
+    </div>
+    <hr>
+    <div>
+	<h2>Detailed Log Settings</h2>
+    </div>
+    <table>
+      <tr>
+	<td><button onclick="setLevel();">Set Level</button></td>
+	<td><select id="set_level_input">
 		<option value="error">Error</option>
 		<option value="warn">Warn</option>
 		<option value="info">Info</option>
 		<option value="debug">Debug</option>
 		<option value="trace">Trace</option>
-	</select>
-    </div>
+	</select></td>
+      </tr>
 
-    <div>
-	<button onclick="setSyslog();">Set Syslog</button>
-        <input id="set_syslog_input" type="text"></input>
-    </div>
+      <tr>
+        <td><button onclick="setFile();">Set File</button></td>
+        <td><input id="set_file_input" type="text"></input></td>
+        <td>Set the file path for logging output. Example: "logs/cloudi_rotated.log"</td>
+      </tr>
 
-    <div>
-	<button onclick="setFormatter();">Set Formatter</button>
-        <input id="set_formatter_input" type="text"></input>
-    </div>
+      <tr>
+	<td><button onclick="setRedirect();">Set Redirection</button></td>
+        <td><input id="set_redirect_input" type="text"></input></td>
+	<td>Redirect all local log output to a remote CloudI node. Use 'undefined' as the node name to log locally.  Example:  cloudi@host</td>
+      </tr>
 
- 
-    <div>
-	<button onclick="setFile();">Set File</button>
-        <input id="set_file_input" type="text"></input>
-    </div>
+      <tr>
+	<td><button onclick="setSyslog();">Set Syslog</button></td>
+        <td><textarea id="set_syslog_input" rows="3" cols="40"></textarea></td>
+	<td>Example:  [{identity, "CloudI"}, {facility, local0}, {level, trace}] </td>
+      </tr>
+
+    </table>
+
 
     <script type="text/javascript">
 	

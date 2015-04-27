@@ -21,9 +21,9 @@
     </style>
 
 <script type="text/javascript">
-var host_url = "ws://127.0.0.1:6464";
+var host_url = "ws://localhost:6464";
 var service_host = "http://localhost:6467";
-var service_name = "/cloudi/api/rpc/nodes_get.erl";
+var service_name = "/cloudi/api/rpc/nodes.erl";
 var add_node_service_name = "/cloudi/api/rpc/nodes_add.erl";
 var remove_node_service_name = "/cloudi/api/rpc/nodes_remove.erl";
 var request_type = "get";
@@ -97,7 +97,7 @@ function open() {
 			var node_entries = [];
 
 			// attempt to parse the data response
-	              	//console.log("parsing starts.  data is length " + data.length);
+	              	console.log("parsing starts.  data is length " + data.length);
 			
 			var start = 0;
 			var end = 0;
