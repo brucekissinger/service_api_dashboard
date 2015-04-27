@@ -1,7 +1,7 @@
 Introduction
 ============
 
-This project provides a web-based dashboard for viewing CloudI environment settings. It uses the JQuery and DataTables javascript libraries to provide an attractive display with minimal coding needed for different browswer dependencies.
+This project provides a web-based dashboard for viewing CloudI environment settings and changing key parameters. It uses the JQuery and DataTables javascript libraries to provide an attractive display with minimal coding needed for different browswer dependencies.
 
 Most screens provide the ability to search for specific text and the ability to change the sort order by clicking on the column name.  Specific notes for each main screen are listed below.
 
@@ -9,11 +9,14 @@ Most screens provide the ability to search for specific text and the ability to 
 Service Summary
 ===============
 This screen provides a summary of services running on a CloudI node. 
+
 Clicking on a service will display buttons to:
 
 * Remove the service
 * Restart the service
 * Show subscriptions for that service
+
+This screen refreshes every 60 seconds.
 
 Code Path
 =========
@@ -23,9 +26,13 @@ Clicking on a code path entry will display buttons to:
 
 * Remove the selected path 
 
+This screen refreshes every 60 seconds.
+
 Nodes 
 =====
 This screen lists both the connected and disconnected CloudI nodes.
+
+This screen refreshes every 60 seconds.
 
 Logging
 =======
