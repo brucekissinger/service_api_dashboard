@@ -21,8 +21,8 @@
     </style>
 
 <script type="text/javascript">
-var host_url = "ws://localhost:6464";
-var service_host = "http://localhost:6467";
+var websocket_port = "6464";
+var service_port = "6467";
 var service_name = "/cloudi/api/rpc/services.erl";
 var restart_service_name = "/cloudi/api/rpc/services_restart.erl";
 var remove_service_name = "/cloudi/api/rpc/services_remove.erl";
@@ -69,9 +69,10 @@ function open() {
     }
     
     $('#connectionStatus').text("Connecting");
-    web_socket = new WebSocket(host_url + service_name);
+    websocket_url = "ws://" + $("#hostname").val() + ":" + websocket_port + service_name;
+    web_socket = new WebSocket(websocket_url);
 
-    console.log("Connecting to " + host_url + service_name);
+    console.log("Connecting to " + websocket_url);
 
     // define function that is called when the web socket is opened
     web_socket.onopen = function() {
@@ -193,9 +194,10 @@ function show_service_subscriptions(serviceID) {
     }
     
     $('#connectionStatus').text("Connecting");
-    subscriptions_web_socket = new WebSocket(host_url + service_name);
+    websocket_url = "ws://" + $("#hostname").val() + ":" + websocket_port + service_name;
+    subscriptions_web_socket = new WebSocket(websocket_url);
 
-    console.log("Connecting to " + host_url + service_name);
+    console.log("Connecting to " + websocket_url);
 
     // define function that is called when the web socket is opened
     subscriptions_web_socket.onopen = function() {
@@ -344,7 +346,7 @@ function createCORSRequest(method, url) {
 
 function remove_service(serviceID) {
 
-    var remove_service_url = service_host + remove_service_name;
+    var remove_service_url = "http://" + $("#hostname").val() + ":" + service_port + remove_service_name;
     var xhr = createCORSRequest('POST', remove_service_url);
     if (!xhr) {
       throw new Error('CORS not supported');
@@ -374,7 +376,7 @@ function remove_service(serviceID) {
 
 function restart_service(serviceID) {
 
-    var restart_service_url = service_host + restart_service_name;
+    var restart_service_url = "http://" + $("#hostname").val() + ":" + service_port + restart_service_name;
     var xhr = createCORSRequest('POST', restart_service_url);
     if (!xhr) {
       throw new Error('CORS not supported');
@@ -415,7 +417,7 @@ function restart_service(serviceID) {
 
 function show_service_subscriptions (serviceID) {
 
-    var service_subscriptions_url = service_host + service_subscriptions_name;
+    var service_subscriptions_url = "http://" + $("#hostname").val() + ":" + service_port + service_subscriptions_name;
     console.log("Flag A url = [" + service_subscriptions_url);
 
     var xhr = createCORSRequest('POST', service_subscriptions_url);
@@ -495,6 +497,7 @@ function show_service_subscriptions (serviceID) {
     </div>
 
 	<div>
+		<input id="hostname" type="text" value="localhost"></input>
 		<button class="left" onClick="send();">Refresh Now</button>
     		<label hidden="true" id="serviceID"></label>
 		<label class="right" id="connectionStatus"></label>
