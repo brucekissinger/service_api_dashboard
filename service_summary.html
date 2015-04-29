@@ -355,14 +355,17 @@ function remove_service(serviceID) {
     xhr.onload = function() {
       var responseText = xhr.responseText;
       console.log(responseText);
-      // process the response.
+
+      // refresh the information shown on the screen
+      send();
     };
 
     xhr.onerror = function() {
       console.log('There was an error!');
+    
+      // refresh the information shown on the screen
+      send();
     };
-
-    xhr.send('[\"' + serviceID + '\"]');
 
     // clear the serviceID
     $('#serviceID').text("");	
@@ -370,8 +373,7 @@ function remove_service(serviceID) {
     // hide the manage service buttons
     toggle_manage_buttons();
 
-    // refresh the information shown on the screen
-    send();
+    xhr.send('[\"' + serviceID + '\"]');
 } 
 
 function restart_service(serviceID) {
@@ -387,7 +389,9 @@ function restart_service(serviceID) {
       console.log("Onload event received. Event=" + e);
       var responseText = xhr.responseText;
       console.log(responseText);
-      // process the response.
+      
+      // refresh the information shown on the screen
+      send();
     };
 
     // create an error event handler
@@ -395,15 +399,18 @@ function restart_service(serviceID) {
       console.log("On error event received.  Event=" + e + " with type " + e.type);
       var responseText = xhr.responseText;
       console.log(responseText);
+
+      // refresh the information shown on the screen
+      send();
     };
 
     // create a progress event handler
     xhr.onprogress = function(e) {
       console.log("Progress event received.  Event=" + e);
-    };
 
-    // send the request
-    xhr.send('[\"' + serviceID + '\"]');
+      // refresh the information shown on the screen
+      send();
+    };
 
     // clear the serviceID
     $('#serviceID').text("");	
@@ -411,8 +418,8 @@ function restart_service(serviceID) {
     // hide the manage service buttons
     toggle_manage_buttons();
 
-    // refresh the information shown on the screen
-    send();
+    // send the request
+    xhr.send('[\"' + serviceID + '\"]');
 } 
 
 function show_service_subscriptions (serviceID) {
@@ -442,14 +449,15 @@ function show_service_subscriptions (serviceID) {
       console.log(responseText);
     };
 */
-    // send the request
-    xhr.send('\"' + serviceID + '\"');
-
     // clear the serviceID
     $('#serviceID').text("");	
 
     // hide the manage service buttons
     toggle_manage_buttons();
+
+    // send the request
+    xhr.send('\"' + serviceID + '\"');
+
 } 
 
 </script>
@@ -562,14 +570,9 @@ function show_service_subscriptions (serviceID) {
         		}
 
 			var table_api = $('#servicesTable').dataTable().api();
-//			idx  = table_api.row(this).index();
-//			console.log("index is " + idx);
-
-//			console.log( table_api.row( this ).data() );
 
 			// save the ServiceID in a hidden HTML object for use later
 			var serviceEntry = table_api.row( this ).data();
-//			console.log("serviceID is " + serviceEntry[3]);
 		        $('#serviceID').text(serviceEntry[3]);
                 
                         // hide the manage service buttons

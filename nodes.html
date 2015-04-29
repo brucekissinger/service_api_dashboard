@@ -221,20 +221,25 @@ function remove_node(nodeID) {
     xhr.onload = function() {
       var responseText = xhr.responseText;
       console.log(responseText);
-      // process the response.
+
+      // refresh the screen 
+      send();
     };
 
     xhr.onerror = function() {
       console.log('There was an error!');
-    };
 
-    xhr.send('[\"' + nodeID + '\"]');
+      // refresh the screen 
+      send();
+    };
 
     // clear the nodeID
     $('#nodeID').text("");	
 
     // hide the manage node buttons
     toggle_manage_buttons();
+
+    xhr.send('[\"' + nodeID + '\"]');
 } 
 
 function add_node(nodeID) {
@@ -248,20 +253,25 @@ function add_node(nodeID) {
     xhr.onload = function() {
       var responseText = xhr.responseText;
       console.log(responseText);
-      // process the response.
+
+      // refresh the screen 
+      send();
     };
 
     xhr.onerror = function() {
       console.log('There was an error!');
-    };
 
-    xhr.send('[\"' + nodeID + '\"]');
+      // refresh the screen 
+      send();
+    };
 
     // clear the nodeID
     $('#nodeID').text("");	
 
     // hide the manage node buttons
     toggle_manage_buttons();
+
+    xhr.send('[\"' + nodeID + '\"]');
 } 
 
 </script>

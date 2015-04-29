@@ -211,17 +211,18 @@ function remove_path(codePath) {
     xhr.onload = function() {
       var responseText = xhr.responseText;
       console.log(responseText);
-      // process the response.
-      return;
+    
+      // refresh the information on the page
+      send();
     };
 
     xhr.onerror = function(xhr, textStatus, errorThrown) {
       console.log('There was an error.  Status ' + xhr.status);
       console.log('Error response=' + xhr.responseText);
-      return;
+    
+      // refresh the information on the page
+      send();
     };
-
-    xhr.send('\"' + codePath + '\"');
 
     // clear the codePath
     $('#codePath').text("");	
@@ -229,8 +230,7 @@ function remove_path(codePath) {
     // hide the manage code path buttons
     toggle_manage_buttons();
 
-    // refresh the information on the page
-    send();
+    xhr.send('\"' + codePath + '\"');
 } 
 
 function add_path(codePath) {
@@ -244,16 +244,17 @@ function add_path(codePath) {
     xhr.onload = function() {
       var responseText = xhr.responseText;
       console.log(responseText);
-      // process the response.
-      return;
+
+      // refresh the information on the page
+      send();
     };
 
     xhr.onerror = function() {
       console.log('There was an error!');
-      return;
-    };
 
-    xhr.send('\"' + codePath + '\"');
+      // refresh the information on the page
+      send();
+    };
 
     // clear the code path
     $('#codePath').text("");	
@@ -261,8 +262,7 @@ function add_path(codePath) {
     // hide the manage code path buttons
     toggle_manage_buttons();
 
-    // refresh the information on the page
-    send();
+    xhr.send('\"' + codePath + '\"');
 } 
 
 
