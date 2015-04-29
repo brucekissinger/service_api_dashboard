@@ -3,7 +3,7 @@ Introduction
 
 This project provides a web-based dashboard for viewing CloudI environment settings and changing key parameters. It uses the JQuery and DataTables javascript libraries to provide an attractive display with minimal coding needed for different browswer dependencies.
 
-Most screens provide the ability to search for specific text and the ability to change the sort order by clicking on the column name.  Specific notes for each main screen are listed below.
+Most screens in the application provide the ability to search for specific text and the ability to change the sort order by clicking on the column name.  In addition, you can specify the host name or address to monitor.  Specific notes for each main screen are listed below.
 
  
 Service Summary
