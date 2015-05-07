@@ -18,6 +18,11 @@ Clicking on a service will display buttons to:
 
 This screen refreshes every 60 seconds.
 
+View Log File
+=============
+This screen displays the current log file contents with a filter for different log levels.  The screen refreshes every 60 seconds.
+
+
 Code Path
 =========
 This screen provides a list of the current code paths and the ability to add a new code path.
