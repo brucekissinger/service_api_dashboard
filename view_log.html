@@ -97,11 +97,12 @@ function open() {
 			var end = 0;
 			var log_entries = [];
 			var remaining_data = data;
-			var regexp_object = new RegExp("/" + $("#set_level_input").val() + "/");
+			var loglevel_regexp = new RegExp("/" + $("#set_level_input").val() + "/");
+                        var date_regexp = /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T/;
 		
 			do {
 				// parse the log date 
-                                start = remaining_data.search(/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T/);
+                                start = remaining_data.search(date_regexp);
 				if (start >= 0) {
 					end = remaining_data.indexOf(" ", start);  
 					var logDate = remaining_data.substring(start,end);
@@ -118,14 +119,14 @@ function open() {
 				
 					// parse the log message	
 					remaining_data = remaining_data.substring(end+1);
-                                	end = remaining_data.search(/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T/) - 1;
+                                	end = remaining_data.search(date_regexp) - 1;
 					var logMessage = remaining_data.substring(0,end);
 
 					// shift the remaining text
 					remaining_data = remaining_data.substring(end);
 
 					// filter by log level
-					if (regexp_object.test(logLevel)) { 
+					if (loglevel_regexp.test(logLevel)) { 
 
 						// create a new log entry object with the various data elements
 						var lineNumber = log_entries.length + 1;

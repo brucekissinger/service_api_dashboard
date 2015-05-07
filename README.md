@@ -22,6 +22,19 @@ View Log File
 =============
 This screen displays the current log file contents with a filter for different log levels.  The screen refreshes every 60 seconds.
 
+Note that in order to use this function, there MUST be an entry in the cloudi.conf similar to what is shown below.
+
+        % Used for viewing logs on the Dashboard
+        {internal,
+                "/dashboard/log/",
+                cloudi_service_filesystem,
+                [{directory, "/usr/local/var/log/cloudi"},
+                {refresh, 60},          % 1 minute
+                {cache, 60},            % 1 minute
+                {use_http_get_suffix, true}],      
+                none,
+                60000, 5000, 5000, [api], undefined, 1, 1, 300, []}
+
 
 Code Path
 =========
