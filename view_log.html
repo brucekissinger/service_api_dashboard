@@ -89,6 +89,7 @@ function open() {
         }
         else {
             //console.log("Response (out): " + data);
+            console.log("Processing response");
 
 		if (data != "got connect! yay!") {
 
@@ -97,7 +98,8 @@ function open() {
 			var end = 0;
 			var log_entries = [];
 			var remaining_data = data;
-			var loglevel_regexp = new RegExp("/" + $("#set_level_input").val() + "/");
+
+			var loglevel_regexp = new RegExp( $("#set_level_input").val() );
                         var date_regexp = /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T/;
 		
 			do {
@@ -111,7 +113,7 @@ function open() {
 					start = end+1;
 					end = remaining_data.indexOf(" ", start);  
 					var logLevel = remaining_data.substring(start,end);
-						
+		
 					// parse the log source	
 					start = end+1;
 					end = remaining_data.indexOf(")", start) + 1;  
@@ -251,18 +253,18 @@ function createCORSRequest(method, url) {
 
 	<div>
 		<input id="hostname" type="text" value="localhost"></input>
-		<button class="left" onClick="send();">Refresh Now</button>
+		<button class="left" onClick="send()">Refresh Now</button>
 		<label>Filter by Level</label>
-        	<select id="set_level_input" onChange="send();">
-	                <option selected value="TRACE|DEBUG|INFO|WARN|ERROR|FATAL">>= Trace</option> 
+        	<select id="set_level_input" onchange="send()">
+	                <option selected value="TRACE|DEBUG|INFO|WARN|ERROR|FATAL">&ge; Trace</option> 
 			<option value="TRACE">= Trace</option> 
-	                <option value="DEBUG|INFO|WARN|ERROR|FATAL">>= Debug</option> 
+	                <option value="DEBUG|INFO|WARN|ERROR|FATAL">&ge; Debug</option> 
 			<option value="DEBUG">= Debug</option> 
-	                <option value="INFO|WARN|ERROR|FATAL">>= Info</option> 
+	                <option value="INFO|WARN|ERROR|FATAL">&ge; Info</option> 
 			<option value="INFO">= Info</option> 
-			<option value="WARN|ERROR|FATAL">>= Warn</option> 
+			<option value="WARN|ERROR|FATAL">&ge; Warn</option> 
 			<option value="WARN">= Warn</option> 
-			<option value="ERROR|FATAL">>= Error</option> 
+			<option value="ERROR|FATAL">&ge; Error</option> 
 			<option value="ERROR">= Error</option> 
 			<option value="FATAL">= Fatal</option> 
 		</select>
@@ -294,6 +296,8 @@ function createCORSRequest(method, url) {
 		$('#logTable').dataTable( {
 		  "bJQueryUI" : true, 
 		  "sPaginationType" : "full_numbers",
+		  "lengthMenu": [ 10, 100, 500, "All"],
+		  "pageLength": 500,
 		  "columnDefs": [ 
 			{ "width": "50px", "targets": 0}, 
 			{ "width": "150px", "targets": 1}, 
