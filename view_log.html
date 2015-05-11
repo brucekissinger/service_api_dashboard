@@ -266,6 +266,11 @@
                           // display an alert message if the log file has been redirected	
                           if ($("#set_redirect_input").val() != "undefined") {
                               alert("The log file has been redirected and can not be displayed");
+          
+			      // hide the loading message
+          		      $('#loadingMessage').hide();
+      
+			      close_log_settings_service();
                           }
                       }
 
@@ -365,7 +370,7 @@
         <option value="FATAL">= Fatal</option>
       </select>
        
-      <input id="set_redirect_input" type="text"></input>
+      <input id="set_redirect_input" type="hidden"></input>
        
       <label class="right" id="connectionStatus"></label>
     </div>

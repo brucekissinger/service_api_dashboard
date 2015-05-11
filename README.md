@@ -52,7 +52,7 @@ This screen lists both the connected and disconnected CloudI nodes.
 
 This screen refreshes every 60 seconds.
 
-Logging
-=======
+Log Settings
+============
 This screen displays the current logging configuration and allows you to change some detailed log settings.
 
