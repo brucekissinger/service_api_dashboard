@@ -29,6 +29,8 @@
       var request_type = "get";
       var web_socket = undefined;
       var subscriptions_web_socket = undefined;
+      var websocket_url = "";
+      var interval_id = undefined; 
 
       function is(type, obj) {
           if (obj === undefined)
@@ -80,6 +82,24 @@
               send();
           };
 
+          // define function that is called when an error occurs with the websocket
+          web_socket.onerror = function () {
+              $('#connectionStatus').text("Error");
+              console.log("Websocket error");
+
+              // turn off the timed page refresh
+              if (interval_id != undefined) {
+                 clearInterval(interval_id);
+                 interval_id = undefined;
+              }
+
+              // hide the loading message
+              $('#loadingMessage').hide();
+
+              alert("Error connecting to websocket " + websocket_url);
+          };
+
+          // define function that is called when data is available on the websocket 
           handle_message = function (data) {
               if (data.startsWith("notification:")) {
                   // client state check to determine this is an incoming
@@ -142,10 +162,16 @@
                       // display the service entries in the table
                       updateTable(service_entries);
 
+                      // setup time interval to refresh page
+                      if (interval_id == undefined) {
+                          interval_id = setInterval("send();", 60000);
+                      }
+
                   }
               }
           };
 
+          // define function that is called when a message is received on the web socket 
           web_socket.onmessage = function (evt) {
               var data = evt.data;
               if (is("Blob", data)) {
@@ -162,10 +188,9 @@
               }
           };
 
+          // define function that is called when the websocket is closed
           web_socket.onclose = function () {
               web_socket = undefined;
-
-              $('#connectionStatus').text("Not connected");
               console.log("Connection closed");
           };
       }
@@ -538,9 +563,6 @@
 
           // call the service request function now
           send();
-
-          // call the service request function every 60 seconds
-          setInterval("send();", 60000);
 
           // hide the manage service buttons
           toggle_manage_buttons();

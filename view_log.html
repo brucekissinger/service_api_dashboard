@@ -29,6 +29,9 @@
       var view_log_web_socket = undefined;
       var log_settings_web_socket = undefined;
 
+      var websocket_url = "";
+      var interval_id = undefined; 
+
       function is(type, obj) {
           if (obj === undefined)
               return type === 'undefined';
@@ -89,6 +92,24 @@
               send_view_log_service();
           };
 
+          // define function that is called when an error occurs with the websocket
+          web_socket.onerror = function () {
+              $('#connectionStatus').text("Error");
+              console.log("Websocket error");
+
+              // turn off the timed page refresh
+              if (interval_id != undefined) {
+                 clearInterval(interval_id);
+                 interval_id = undefined;
+              }
+
+              // hide the loading message
+              $('#loadingMessage').hide();
+
+              alert("Error connecting to websocket " + websocket_url);
+          };
+
+          // define function that is called when data is available on the websocket
           handle_message = function (data) {
               if (data.startsWith("notification:")) {
                   // client state check to determine this is an incoming
@@ -157,10 +178,16 @@
                       // display the log entries in the table
                       updateTable(log_entries);
 
+                      // setup time interval to refresh page
+                      if (interval_id == undefined) {
+                          interval_id = setInterval("send();", 60000);
+                      }
+
                   }
               }
           };
 
+          // define function that is called when a message is received on the web socket 
           view_log_web_socket.onmessage = function (evt) {
               var data = evt.data;
               if (is("Blob", data)) {
@@ -177,6 +204,7 @@
               }
           };
 
+          // define function that is called when the websocket is closed
           view_log_web_socket.onclose = function () {
               view_log_web_socket = undefined;
 
@@ -231,6 +259,24 @@
               send_log_settings_service();
           };
 
+          // define function that is called when an error occurs with the websocket
+          log_settings_web_socket.onerror = function () {
+              $('#connectionStatus').text("Error");
+              console.log("Websocket error");
+
+              // turn off the timed page refresh
+              if (interval_id != undefined) {
+                 clearInterval(interval_id);
+                 interval_id = undefined;
+              }
+
+              // hide the loading message
+              $('#loadingMessage').hide();
+
+              alert("Error connecting to websocket " + websocket_url);
+          };
+
+          // define function that is called when data is available on the websocket
           handle_message_log_settings = function (data) {
               if (data.startsWith("notification:")) {
                   // client state check to determine this is an incoming
@@ -284,6 +330,8 @@
               }
           };
 
+
+          // define function that is called when a message is received on the web socket 
           log_settings_web_socket.onmessage = function (evt) {
               var data = evt.data;
               if (is("Blob", data)) {
@@ -300,6 +348,7 @@
               }
           };
 
+          // define function that is called when the websocket is closed
           log_settings_web_socket.onclose = function () {
               log_settings_web_socket = undefined;
 
@@ -421,9 +470,6 @@
 
               // call the service request function now
               refresh_log();
-
-              // call the service request function every 60 seconds
-              setInterval("refresh_log();", 60000);
 
           });
     </script>
