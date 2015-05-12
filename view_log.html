@@ -93,7 +93,7 @@
           };
 
           // define function that is called when an error occurs with the websocket
-          web_socket.onerror = function () {
+          view_log_web_socket.onerror = function () {
               $('#connectionStatus').text("Error");
               console.log("Websocket error");
 
@@ -180,7 +180,7 @@
 
                       // setup time interval to refresh page
                       if (interval_id == undefined) {
-                          interval_id = setInterval("send();", 60000);
+                          interval_id = setInterval("refresh_log();", 60000);
                       }
 
                   }
