@@ -409,6 +409,10 @@
               var oTable = $('#logTable').dataTable();
               oTable.fnClearTable();
 
+
+              // assign default hostname
+              $("#hostname").val(location.host);
+
               // show the loading message
               $('#loadingMessage').show();
 

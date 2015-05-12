@@ -330,6 +330,9 @@
     <script type="text/javascript">
       $(document).ready(function () {
 
+          // assign default hostname
+          $("#hostname").val(location.host);
+
           // change the table attributes to support jQuery styles
           $('#nodesTable').dataTable( {
               "bJQueryUI" : true, "sPaginationType" : "full_numbers"
