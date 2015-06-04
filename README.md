@@ -25,15 +25,24 @@ This screen displays the current log file contents with a filter for different l
 Note that in order to use this function, there MUST be an entry in the cloudi.conf similar to what is shown below.
 
         % Used for viewing logs on the Dashboard
-        {internal,
-                "/dashboard/log/",
-                cloudi_service_filesystem,
-                [{directory, "/usr/local/var/log/cloudi"},
+        [{type, internal},
+         {prefix, "/dashboard/log/"},
+         {module, cloudi_service_filesystem},
+         {args, [{directory, "logs"},
                 {refresh, 60},          % 1 minute
                 {cache, 60},            % 1 minute
-                {use_http_get_suffix, true}],      
-                none,
-                60000, 5000, 5000, [api], undefined, 1, 1, 300, []}
+                {use_http_get_suffix, true}]},      
+         {dest_refresh, none},
+         {timeout_init, 60000}, 
+         {timeout_async, 5000}, 
+         {timeout_sync, 5000}, 
+         {dest_list_deny, [api]}, 
+         {dest_list_allow, undefined}, 
+         {count_process, 1}, 
+         {max_r, 1}, 
+         {max_t, 300}, 
+         {options, []}
+        ]
 
 
 Code Path
@@ -48,9 +57,7 @@ This screen refreshes every 60 seconds.
 
 Nodes 
 =====
-This screen lists both the connected and disconnected CloudI nodes.
-
-This screen refreshes every 60 seconds.
+This screen lists the current node discovery configuration.  It also provides a list of current and previously connected nodes. In addition, a new node can be added or an existing node removed from the cluster.
 
 Log Settings
 ============
