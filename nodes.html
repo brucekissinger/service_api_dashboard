@@ -1,15 +1,12 @@
-<!DOCTYPE HTML>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=windows-1252"/>
-    <title>Nodes</title>
-    <!-- link to JQuery and DataTables javascript libraries -->
+    <title>Node Settings</title>
+    <!-- link to JQuery javascript libraries -->
     <script src="js/jquery-1.11.1.min.js"></script>
-    <script src="js/jquery.dataTables.min.js"></script>
-    <script src="js/dataTables.jqueryui.js"></script>
-    <!-- link to JQuery and DataTables CSS definitions -->
+    <!-- link to JQuery CSS definitions -->
     <link rel="stylesheet" href="css/jquery-ui.css"/>
-    <link rel="stylesheet" href="css/dataTables.jqueryui.css"/>
     <!-- define an internal style -->
     <style type="text/css">
         .right {
@@ -20,13 +17,21 @@
         }
     </style>
     <script type="text/javascript">
-      var host_url = "ws://localhost:6464";
-      var service_host = "http://localhost:6467";
-      var service_name = "/cloudi/api/rpc/nodes.erl";
-      var add_node_service_name = "/cloudi/api/rpc/nodes_add.erl";
-      var remove_node_service_name = "/cloudi/api/rpc/nodes_remove.erl";
+      var websocket_port = "6464";
+      var service_port = "6467";
+
+      var node_get_service_name = "/cloudi/api/rpc/nodes_get.erl";
+      var node_set_service_name = "/cloudi/api/rpc/nodes_set.erl";
+      var node_add_service_name = "/cloudi/api/rpc/nodes_add.erl";
+      var node_remove_service_name = "/cloudi/api/rpc/nodes_remove.erl";
+      var node_alive_service_name = "/cloudi/api/rpc/nodes_alive.erl";
+      var node_dead_service_name = "/cloudi/api/rpc/nodes_dead.erl";
+
       var request_type = "get";
-      var web_socket = undefined;
+      var node_get_web_socket = undefined;
+      var live_nodes_web_socket = undefined;
+      var dead_nodes_web_socket = undefined;
+      var websocket_url = "";
 
       function is(type, obj) {
           if (obj === undefined)
@@ -35,29 +40,62 @@
               return type === 'null';
           else 
               return type === Object.prototype.toString.call(obj).slice(8,  - 1);
-      }
+      };
 
       String.prototype.startsWith = function (str) {
           return this.slice(0, str.length) == str;
       };
 
-      // This function uses a web socket to request the current node configuration
-      function send() {
-          // if the web socket is undefined then try to open it 
-          if (web_socket == undefined) {
+      // This function uses a web socket to retrieve the current node settings
+      function sendNodeGet() {
+          // if the web socket is undefined then display an error
+          if (node_get_web_socket == undefined) {
               $('#connectionStatus').text("Not connected");
-              open();
+              openNodeGet();
+          }
+
+          // clear the current configuration value
+          $("#current_configuration").val("");
+
+          // if the web socket is in an open status then send the request
+          if (node_get_web_socket.readyState == node_get_web_socket.OPEN) {
+              node_get_web_socket.send(request_type);
+              //console.log("Request (out): " + request_type);
+          }
+      };
+
+      // This function uses a web socket to retrieve the current live nodes 
+      function sendLiveNodes() {
+          // if the web socket is undefined then display an error
+          if (live_nodes_web_socket == undefined) {
+              $("#connectionStatus").text("Not connected");
+              openLiveNodes();
           }
 
           // if the web socket is in an open status then send the request
-          if (web_socket.readyState == web_socket.OPEN) {
-              web_socket.send(request_type);
+          if (live_nodes_web_socket.readyState == live_nodes_web_socket.OPEN) {
+              live_nodes_web_socket.send(request_type);
               //console.log("Request (out): " + request_type);
           }
-      }
+      };
 
-      // This function opens the web socket used to request the current node configuration
-      function open() {
+      // This function uses a web socket to retrieve the current dead nodes 
+      function sendDeadNodes() {
+          // if the web socket is undefined then display an error
+          if (dead_nodes_web_socket == undefined) {
+              $("#connectionStatus").text("Not connected");
+              openDeadNodes();
+          }
+
+          // if the web socket is in an open status then send the request
+          if (dead_nodes_web_socket.readyState == dead_nodes_web_socket.OPEN) {
+              dead_nodes_web_socket.send(request_type);
+              //console.log("Request (out): " + request_type);
+          }
+      };
+
+      // This function opens a web socket used to retrieve the current node settings
+      function openNodeGet() {
           if (!("WebSocket" in window)) {
               $('#connectionStatus').text("Not connected");
               alert("This browser does not support WebSockets");
@@ -65,25 +103,38 @@
           }
 
           $('#connectionStatus').text("Connecting");
-          web_socket = new WebSocket(host_url + service_name);
+          websocket_url = "ws://" + $("#hostname").val() + ":" + websocket_port + node_get_service_name;
+          node_get_web_socket = new WebSocket(websocket_url);
 
-          console.log("Connecting to " + host_url + service_name);
+          console.log("Connecting to " + websocket_url);
 
           // define function that is called when the web socket is opened
-          web_socket.onopen = function () {
+          node_get_web_socket.onopen = function () {
               $('#connectionStatus').text("Connected");
               console.log("Connected");
-              send();
+              sendNodeGet();
           };
 
-          handle_message = function (data) {
+          // define function that is called when an error occurs with the websocket
+          node_get_web_socket.onerror = function () {
+              $('#connectionStatus').text("Error");
+              console.log("Websocket error");
+
+              // hide the loading message
+              $('#loadingMessage').hide();
+
+              alert("Error connecting to websocket " + websocket_url);
+          };
+
+          // define function that is called when data is available on the websocket 
+          handle_message_node_get = function (data) {
               if (data.startsWith("notification:")) {
                   // client state check to determine this is an incoming
                   // service request, not an incoming response
                   console.log("Request (in): " + data);
 
                   var response = "ok";
-                  web_socket.send(response);
+                  node_get_web_socket.send(response);
                   console.log("Response (in): " + response);
 
               }
@@ -92,47 +143,20 @@
 
                   if (data != "got connect! yay!") {
 
-                      var node_entries = [];
+                      // update the current configuration
+                      $("#current_configuration").val(data);
 
-                      // attempt to parse the data response
-                      console.log("parsing starts.  data is length " + data.length);
+                      // hide the loading message
+                      $("#loadingMessage").hide();
 
-                      var start = 0;
-                      var end = 0;
-
-                      do {
-                          // parse the discovery type
-                          start = data.indexOf("{", end);
-
-                          if (start > 0) {
-                              end = data.indexOf(",", start);
-                              if (end > 0) {
-                                  var discoveryType = data.substring(start + 1, end);
-                                  console.log("discoveryType= [" + discoveryType + "]");
-
-                                  // parse the options 
-                                  start = data.indexOf("[", end);
-                                  end = data.indexOf("]", start);
-                                  var options = data.substring(start + 1, end + 1);
-
-                                  var nodeEntry = new Object([discoveryType, options]);
-
-                                  // add the nodeEntry object to the array
-                                  node_entries[node_entries.length] = nodeEntry;
-                              }
-                          }
-                          //console.log("service entries: " + service_entries);
-                      }
-                      while (start > 0 && end > 0);
-
-                      // display the node entries in the table
-                      updateTable(node_entries);
-
+                      // close web socket
+                      closeNodeGet();
                   }
               }
           };
 
-          web_socket.onmessage = function (evt) {
+          // define function that is called when a message is received on the web socket 
+          node_get_web_socket.onmessage = function (evt) {
               var data = evt.data;
               if (is("Blob", data)) {
                   // for the example, treat binary as text
@@ -140,47 +164,268 @@
                   reader.readAsText(data, "text/plain");
                   reader.onload = function (reader_evt) {
                       data = reader_evt.target.result;
-                      handle_message(data);
+                      handle_message_node_get(data);
                   };
               }
               else {
-                  handle_message(data);
+                  handle_message_node_get(data);
               }
           };
 
-          web_socket.onclose = function () {
-              web_socket = undefined;
-
-              $('#connectionStatus').text("Not connected");
+          // define function that is called when the websocket is closed
+          node_get_web_socket.onclose = function () {
+              node_get_web_socket = undefined;
               console.log("Connection closed");
           };
       }
 
-      // This function closes the web socket used to request the current node configuration
-      function close() {
-          $('#connectionStatus').text("Not connected");
-
-          if (web_socket == undefined) {
+      // This function opens a web socket used to retrieve the live nodes
+      function openLiveNodes() {
+          if (!("WebSocket" in window)) {
+              $('#connectionStatus').text("Not connected");
+              alert("This browser does not support WebSockets");
               return;
           }
-          web_socket.close();
-      }
 
-      // Toggle button visiblity when an entry in the table is selected
-      function toggle_manage_buttons() {
-          // always show the add button
-          $('#add_button').show();
+          $('#connectionStatus').text("Connecting");
+          websocket_url = "ws://" + $("#hostname").val() + ":" + websocket_port + node_alive_service_name;
+          live_nodes_web_socket = new WebSocket(websocket_url);
 
-          var nodeID = $('#nodeID').text();
+          console.log("Connecting to " + websocket_url);
 
-          // show the remove button if the node is not an auto discovery node
-          if (nodeID.length > 0 && nodeID != "discovery") {
-              $('#remove_button').show();
+          // define function that is called when the web socket is opened
+          live_nodes_web_socket.onopen = function () {
+              $('#connectionStatus').text("Connected");
+              console.log("Connected");
+              sendLiveNodes();
+          };
+
+          // define function that is called when an error occurs with the websocket
+          live_nodes_web_socket.onerror = function () {
+              $('#connectionStatus').text("Error");
+              console.log("Websocket error");
+
+              // hide the loading message
+              $('#loadingMessage').hide();
+
+              alert("Error connecting to websocket " + websocket_url);
+          };
+
+          // define function that is called when data is available on the websocket 
+          handle_message_live_nodes = function (data) {
+              if (data.startsWith("notification:")) {
+                  // client state check to determine this is an incoming
+                  // service request, not an incoming response
+                  console.log("Request (in): " + data);
+
+                  var response = "ok";
+                  live_nodes_web_socket.send(response);
+                  console.log("Response (in): " + response);
+
+              }
+              else {
+                  console.log("Response (out): " + data);
+
+                  if (data != "got connect! yay!") {
+
+                      // clear the list of live node values
+                      $("#live_node_list").empty();
+
+                      // parse the list of nodes
+                      searchString = "[";
+                      start = data.indexOf(searchString);
+                      if (start >  - 1) {
+                          end = data.indexOf(",", start);
+
+                          if (end ==  - 1) {
+                              end = data.indexOf("]", start);
+                          }
+
+                          var nodeValue = data.substring(start + searchString.length, end);
+                          console.log("Node value is " + nodeValue);
+
+                          // add the value to the list 
+                          if (nodeValue.length > 0) {
+                              var optionString = "<option value='" + nodeValue + "'>" + nodeValue + "</option>";
+                          }
+                          else {
+                              var optionString = "<option value='NA'>No additional nodes found</option>";
+
+                          }
+                          $("#live_node_list").append(optionString);
+                      }
+
+                      // hide the loading message
+                      $('#loadingMessage').hide();
+
+                      // close the web socket
+                      closeLiveNodes();
+                  }
+              }
+          };
+
+          // define function that is called when a message is received on the web socket 
+          live_nodes_web_socket.onmessage = function (evt) {
+              var data = evt.data;
+              if (is("Blob", data)) {
+                  // for the example, treat binary as text
+                  var reader = new FileReader();
+                  reader.readAsText(data, "text/plain");
+                  reader.onload = function (reader_evt) {
+                      data = reader_evt.target.result;
+                      handle_message_live_nodes(data);
+                  };
+              }
+              else {
+                  handle_message_live_nodes(data);
+              }
+          };
+
+          // define function that is called when the websocket is closed
+          live_nodes_web_socket.onclose = function () {
+              live_nodes_web_socket = undefined;
+              console.log("Connection closed");
+          };
+      };
+
+      // This function opens a web socket used to retrieve the dead nodes
+      function openDeadNodes() {
+          if (!("WebSocket" in window)) {
+              $('#connectionStatus').text("Not connected");
+              alert("This browser does not support WebSockets");
+              return;
           }
-          else {
-              $('#remove_button').hide();
+
+          $('#connectionStatus').text("Connecting");
+          websocket_url = "ws://" + $("#hostname").val() + ":" + websocket_port + node_dead_service_name;
+          dead_nodes_web_socket = new WebSocket(websocket_url);
+
+          console.log("Connecting to " + websocket_url);
+
+          // define function that is called when the web socket is opened
+          dead_nodes_web_socket.onopen = function () {
+              $('#connectionStatus').text("Connected");
+              console.log("Connected");
+              sendDeadNodes();
+          };
+
+          // define function that is called when an error occurs with the websocket
+          dead_nodes_web_socket.onerror = function () {
+              $('#connectionStatus').text("Error");
+              console.log("Websocket error");
+
+              // hide the loading message
+              $('#loadingMessage').hide();
+
+              alert("Error connecting to websocket " + websocket_url);
+          };
+
+          // define function that is called when data is available on the websocket 
+          handle_message_dead_nodes = function (data) {
+              if (data.startsWith("notification:")) {
+                  // client state check to determine this is an incoming
+                  // service request, not an incoming response
+                  console.log("Request (in): " + data);
+
+                  var response = "ok";
+                  dead_nodes_web_socket.send(response);
+                  console.log("Response (in): " + response);
+
+              }
+              else {
+                  console.log("Response (out): " + data);
+
+                  if (data != "got connect! yay!") {
+
+                      // clear the list of live node values
+                      $("#dead_node_list").empty();
+
+                      // parse the list of nodes
+                      searchString = "[";
+                      start = data.indexOf(searchString);
+                      if (start >  - 1) {
+                          end = data.indexOf(",", start);
+
+                          if (end ==  - 1) {
+                              end = data.indexOf("]", start);
+                          }
+
+                          var nodeValue = data.substring(start + searchString.length, end);
+                          console.log("Node value is " + nodeValue);
+
+                          // add the value to the list 
+                          if (nodeValue.length > 0) {
+                              var optionString = "<option value='" + nodeValue + "'>" + nodeValue + "</option>";
+                          }
+                          else {
+                              var optionString = "<option value='NA'>No additional nodes found</option>";
+
+                          }
+                          $("#dead_node_list").append(optionString);
+                      }
+
+                      // hide the loading message
+                      $('#loadingMessage').hide();
+
+                      // close the web socket
+                      closeDeadNodes();
+                  }
+              }
+          };
+
+          // define function that is called when a message is received on the web socket 
+          dead_nodes_web_socket.onmessage = function (evt) {
+              var data = evt.data;
+              if (is("Blob", data)) {
+                  // for the example, treat binary as text
+                  var reader = new FileReader();
+                  reader.readAsText(data, "text/plain");
+                  reader.onload = function (reader_evt) {
+                      data = reader_evt.target.result;
+                      handle_message_dead_nodes(data);
+                  };
+              }
+              else {
+                  handle_message_dead_nodes(data);
+              }
+          };
+
+          // define function that is called when the websocket is closed
+          dead_nodes_web_socket.onclose = function () {
+              dead_nodes_web_socket = undefined;
+              console.log("Connection closed");
+          };
+      };
+
+      // This function closes the web socket used to retrieve the current node settings
+      function closeNodeGet() {
+          $('#connectionStatus').text("");
+
+          if (node_get_web_socket == undefined) {
+              return;
           }
-      }
+          node_get_web_socket.close();
+      };
+
+      // This function closes the web socket used to retrieve the live nodes
+      function closeLiveNodes() {
+          $('#connectionStatus').text("");
+
+          if (live_nodes_web_socket == undefined) {
+              return;
+          }
+          live_nodes_web_socket.close();
+      };
+
+      // This function closes the web socket used to retrieve the dead nodes
+      function closeDeadNodes() {
+          $('#connectionStatus').text("");
+
+          if (dead_nodes_web_socket == undefined) {
+              return;
+          }
+          dead_nodes_web_socket.close();
+      };
 
       function createCORSRequest(method, url) {
           console.log("Creating CORS Request " + method + " " + url);
@@ -205,16 +450,17 @@
 
               // Otherwise, CORS is not supported by the browser.
               xhr = null;
+              console.log("XHR not supported by this browser");
 
           }
           return xhr;
-      }
+      };
 
-      // Submit an HTTP request to remove a node
-      function remove_node(nodeID) {
+      // This function submits an HTTP request to set the node configuration
+      function setNodeConfiguration() {
 
-          var remove_node_service_url = service_host + remove_node_service_name;
-          var xhr = createCORSRequest('POST', remove_node_service_url);
+          var service_url = "http://" + $("#hostname").val() + ":" + service_port + node_set_service_name;
+          var xhr = createCORSRequest('POST', service_url);
           if (!xhr) {
               throw new Error('CORS not supported');
           }
@@ -222,188 +468,88 @@
           xhr.onload = function () {
               var responseText = xhr.responseText;
               console.log(responseText);
-
-              // refresh the screen 
-              send();
           };
 
-          xhr.onerror = function () {
-              console.log('There was an error!');
+          xhr.onerror = function (xhr, textStatus, errorThrown) {
+              console.log('There was an error.  Status ' + xhr.status);
+              console.log('Error response=' + xhr.responseText);
 
-              // refresh the screen 
-              send();
+              // refresh the information shown on the screen
+              sendNodeGet();
           };
 
-          // clear the nodeID
-          $('#nodeID').text("");
+          var value_to_send = $("#set_current_configuration").val();
+          console.log("Sending value " + value_to_send);
+          xhr.send(value_to_send);
+	};
 
-          // hide the manage node buttons
-          toggle_manage_buttons();
-
-          xhr.send('[\"' + nodeID + '\"]');
-      }
-
-      // Submit an HTTP request to add a node
-      function add_node(nodeID) {
-
-          var add_node_service_url = service_host + add_node_service_name;
-          var xhr = createCORSRequest('POST', add_node_service_url);
-          if (!xhr) {
-              throw new Error('CORS not supported');
-          }
-
-          xhr.onload = function () {
-              var responseText = xhr.responseText;
-              console.log(responseText);
-
-              // refresh the screen 
-              send();
-          };
-
-          xhr.onerror = function () {
-              console.log('There was an error!');
-
-              // refresh the screen 
-              send();
-          };
-
-          // clear the nodeID
-          $('#nodeID').text("");
-
-          // hide the manage node buttons
-          toggle_manage_buttons();
-
-          xhr.send('[\"' + nodeID + '\"]');
-      }
     </script>
   </head>
   <body>
-    <script type="text/javascript">
-      // This function is called by the server when data is ready to be processed
-      function updateTable(nodeEntries) {
-
-          // clear table
-          var oTable = $('#nodesTable').dataTable();
-          oTable.fnClearTable();
-
-          // process each endpoint event in the array            
-          for (i = 0;i < nodeEntries.length;i++) {
-              nodeEntry = nodeEntries[i];
-
-              oTable.fnAddData([nodeEntry[0], nodeEntry[1]]);
-
-          }
-
-          // hide the loading message
-          $('#loadingMessage').hide();
-      }
-    </script>
     <div id="logo">
       <img class="right" src="powered_by_cloudi.png"></img>
        
-      <h1>Nodes</h1>
+      <h1>Node Settings</h1>
+       
+      <label class="right" id="connectionStatus"></label>
     </div>
     <div id="loadingMessage">
       <h2 class="loading">Waiting for data...</h2>
     </div>
     <div>
-      <button class="left" onclick="send();">Refresh Now</button>
-       
-      <label hidden="true" id="nodeID"></label>
-       
-      <label class="right" id="connectionStatus"></label>
-       
-      <button id="remove_button">Remove Node</button>
-       
-      <button id="add_button">Add Node</button>
+      <input id="hostname" type="text" value="localhost" title="Host name or address to be monitored"></input>
     </div>
-    <table id="nodesTable" class="display">
-      <thead>
-        <tr>
-          <th>Discovery Type</th>
-          <th>Options</th>
-        </tr>
-      </thead>
+    <hr></hr>
+    <table>
+      <tr>
+        <td>
+          <button onclick="sendLiveNodes();" title="List all the CloudI nodes known to be connected">Display Connected Nodes</button>
+        </td>
+        <td>
+          <select id="live_node_list" size="3"></select>
+        </td>
+      </tr>
        
-      <tbody id="nodesTableBody"></tbody>
+      <tr>
+        <td>
+          <button onclick="sendDeadNodes();" title="List all the CloudI nodes that are disconnected but expected to reconnect">Display Disconnected Nodes</button>
+        </td>
+        <td>
+          <select id="dead_node_list" size="3"></select>
+        </td>
+      </tr>
+    </table>
+    <table>
+      <tr>
+        <td>
+          <button onclick="sendNodeGet();" title="Get the distributed Erlang node configuration for this CloudI node and any CloudI nodes it is currently connected to">Get Node Configuration</button>
+        </td>
+        <td>
+          <textarea readonly="readonly" id="current_configuration" rows="3"
+                    cols="100"></textarea>
+        </td>
+        <td></td>
+      </tr>
+       
+      <tr>
+        <td>
+          <button onclick="setNodeConfiguration();" title="Set the distributed Erlang node configuration for this CloudI node and any CloudI nodes it is currently connected to">Set Node Configuration</button>
+        </td>
+        <td>
+          <textarea id="set_current_configuration" rows="3" cols="100"></textarea>
+        </td>
+      </tr>
     </table>
     <script type="text/javascript">
-      $(document).ready(function () {
+              $(document).ready(function () {
 
-          // assign default hostname
-          $("#hostname").val(location.host);
+                  // assign default hostname
+                  $("#hostname").val(location.host);
 
-          // change the table attributes to support jQuery styles
-          $('#nodesTable').dataTable( {
-              "bJQueryUI" : true, "sPaginationType" : "full_numbers"
-          });
+                  // hide the loading message
+                  $('#loadingMessage').hide();
 
-          // clear the table upon first displaying the page
-          var oTable = $('#nodesTable').dataTable();
-          oTable.fnClearTable();
-
-          // show the loading message
-          $('#loadingMessage').show();
-
-          // set the connection status 
-          $('#connectionStatus').text("Not connected");
-
-          // call the service request function now
-          send();
-
-          // call the service request function every 60 seconds
-          setInterval("send();", 60000);
-
-          // hide the manage service buttons
-          toggle_manage_buttons();
-
-          // define a function that will highlight a row when selected
-          $('#nodesTable tbody').on('click', 'tr', function () {
-
-              // toggle the row highlighting color
-              if ($(this).hasClass('selected')) {
-                  $(this).removeClass('selected');
-              }
-              else {
-                  oTable.$('tr.selected').removeClass('selected');
-                  $(this).addClass('selected');
-              }
-
-              var table_api = $('#nodesTable').dataTable().api();
-
-              // save the node ID in a hidden HTML object for use later
-              var nodeEntry = table_api.row(this).data();
-              console.log("nodeID is " + nodeEntry[0]);
-              $('#nodeID').text(nodeEntry[0]);
-
-              // hide the manage nodes buttons
-              toggle_manage_buttons();
-          });
-
-      });
-
-      // define a function to add a new node
-      $('#add_button').click(function () {
-
-          var nodeID = prompt("Enter new node", "");
-
-          if (nodeID != null && nodeID.length > 0) {
-              console.log("Node ID is " + nodeID);
-              add_node(nodeID);
-          }
-
-      });
-
-      // define a function to remove the selected node
-          $('#remove_button').click(function () {
-
-              var nodeID = $('#nodeID').text();
-              if (nodeID.length > 0 && nodeID != "discovery") {
-                  console.log("Node ID is " + nodeID);
-                  remove_node(nodeID);
-              }
-
-          });
+              });
     </script>
   </body>
 </html>
