@@ -386,7 +386,7 @@
     <table>
       <tr>
         <td>
-          <button onclick="setLevel();">Set Level</button>
+          <button onclick="setLevel();" title="Modify the loglevel. The loglevel is changed with an Erlang module update internally so any logging statements that are turned off create no latency. If set to 'undefined' or 'off', logging output will only be sent to syslog and formatters with an output module">Set Level</button>
         </td>
         <td>
           <select id="set_level_input">
@@ -401,7 +401,7 @@
        
       <tr>
         <td>
-          <button onclick="setFile();">Set File</button>
+          <button onclick="setFile();" title="Set the file path for logging output. If set to 'undefined', logging output will only be sent to syslog and formatters with an output module">Set File</button>
         </td>
         <td>
           <input id="set_file_input" type="text"></input>
@@ -412,7 +412,7 @@
        
       <tr>
         <td>
-          <button onclick="setRedirect();">Set Redirection</button>
+          <button onclick="setRedirect();" title="Redirect all local log output to a remote CloudI node. Use 'undefined' as the node name to log locally">Set Redirection</button>
         </td>
         <td>
           <input id="set_redirect_input" type="text"></input>
@@ -423,7 +423,7 @@
        
       <tr>
         <td>
-          <button onclick="setSyslog();">Set Syslog</button>
+          <button onclick="setSyslog();" title="Send all logging output to syslog">Set Syslog</button>
         </td>
         <td>
           <textarea id="set_syslog_input" rows="3" cols="40"></textarea>
