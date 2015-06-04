@@ -481,8 +481,53 @@
           var value_to_send = $("#set_current_configuration").val();
           console.log("Sending value " + value_to_send);
           xhr.send(value_to_send);
-	};
+      };
 
+      // This function submits an HTTP request to add a node
+      function addNode(nodeValue) {
+
+          var service_url = "http://" + $("#hostname").val() + ":" + service_port + node_add_service_name;
+          var xhr = createCORSRequest('POST', service_url);
+          if (!xhr) {
+              throw new Error('CORS not supported');
+          }
+
+          xhr.onload = function () {
+              var responseText = xhr.responseText;
+              console.log(responseText);
+          };
+
+          xhr.onerror = function (xhr, textStatus, errorThrown) {
+              console.log('There was an error.  Status ' + xhr.status);
+              console.log('Error response=' + xhr.responseText);
+          };
+
+          console.log("Sending value " + nodeValue);
+          xhr.send(nodeValue);
+      };
+
+      // This function submits an HTTP request to remove a node
+      function removeNode(nodeValue) {
+
+          var service_url = "http://" + $("#hostname").val() + ":" + service_port + node_remove_service_name;
+          var xhr = createCORSRequest('POST', service_url);
+          if (!xhr) {
+              throw new Error('CORS not supported');
+          }
+
+          xhr.onload = function () {
+              var responseText = xhr.responseText;
+              console.log(responseText);
+          };
+
+          xhr.onerror = function (xhr, textStatus, errorThrown) {
+              console.log('There was an error.  Status ' + xhr.status);
+              console.log('Error response=' + xhr.responseText);
+          };
+
+          console.log("Sending value " + nodeValue);
+          xhr.send(nodeValue);
+      };
     </script>
   </head>
   <body>
@@ -497,13 +542,17 @@
       <h2 class="loading">Waiting for data...</h2>
     </div>
     <div>
-      <input id="hostname" type="text" value="localhost" title="Host name or address to be monitored"></input>
+      <input id="hostname" type="text" value="localhost"
+             title="Host name or address to be monitored"></input>
     </div>
     <hr></hr>
     <table>
       <tr>
         <td>
-          <button onclick="sendLiveNodes();" title="List all the CloudI nodes known to be connected">Display Connected Nodes</button>
+          <button onclick="sendLiveNodes();"
+                  title="List all the CloudI nodes known to be connected">Display
+                                                                          Connected
+                                                                          Nodes</button>
         </td>
         <td>
           <select id="live_node_list" size="3"></select>
@@ -512,17 +561,39 @@
        
       <tr>
         <td>
-          <button onclick="sendDeadNodes();" title="List all the CloudI nodes that are disconnected but expected to reconnect">Display Disconnected Nodes</button>
+          <button onclick="sendDeadNodes();"
+                  title="List all the CloudI nodes that are disconnected but expected to reconnect">Display
+                                                                                                    Disconnected
+                                                                                                    Nodes</button>
         </td>
         <td>
           <select id="dead_node_list" size="3"></select>
+        </td>
+      </tr>
+       
+      <tr>
+        <td>
+          <button id="add_node_button"
+                  title="Explicitly add a CloudI node name, so that services between all other CloudI nodes and the added nodes can send each other service requests">Add
+                                                                                                                                                                      Node</button>
+        </td>
+      </tr>
+       
+      <tr>
+        <td>
+          <button id="remove_node_button"
+                  title="Explicitly remove a CloudI node name. The CloudI node must have been added explicitly to be removed explicitly (not added by an auto-discovery method)">Remove
+                                                                                                                                                                                 Node</button>
         </td>
       </tr>
     </table>
     <table>
       <tr>
         <td>
-          <button onclick="sendNodeGet();" title="Get the distributed Erlang node configuration for this CloudI node and any CloudI nodes it is currently connected to">Get Node Configuration</button>
+          <button onclick="sendNodeGet();"
+                  title="Get the distributed Erlang node configuration for this CloudI node and any CloudI nodes it is currently connected to">Get
+                                                                                                                                               Node
+                                                                                                                                               Configuration</button>
         </td>
         <td>
           <textarea readonly="readonly" id="current_configuration" rows="3"
@@ -533,7 +604,10 @@
        
       <tr>
         <td>
-          <button onclick="setNodeConfiguration();" title="Set the distributed Erlang node configuration for this CloudI node and any CloudI nodes it is currently connected to">Set Node Configuration</button>
+          <button onclick="setNodeConfiguration();"
+                  title="Set the distributed Erlang node configuration for this CloudI node and any CloudI nodes it is currently connected to">Set
+                                                                                                                                               Node
+                                                                                                                                               Configuration</button>
         </td>
         <td>
           <textarea id="set_current_configuration" rows="3" cols="100"></textarea>
@@ -541,15 +615,33 @@
       </tr>
     </table>
     <script type="text/javascript">
-              $(document).ready(function () {
+          $(document).ready(function () {
 
-                  // assign default hostname
-                  $("#hostname").val(location.host);
+              // assign default hostname
+              $("#hostname").val(location.host);
 
-                  // hide the loading message
-                  $('#loadingMessage').hide();
+              // hide the loading message
+              $('#loadingMessage').hide();
 
+              // define a function to add a new node
+              $('#add_node_button').click(function () {
+                  var nodeValue = prompt("Enter new node", "cloudi@host");
+                  if (nodeValue != null && nodeValue.length > 0) {
+                      console.log("New node " + nodeValue);
+                      addNode(nodeValue);
+                  }
               });
+
+              // define a function to remove a node
+              $('#remove_node_button').click(function () {
+                  var nodeValue = prompt("Enter node to remove", "cloudi@host");
+                  if (nodeValue != null && nodeValue.length > 0) {
+                      console.log("Remove node " + nodeValue);
+                      removeNode(nodeValue);
+                  }
+              });
+
+          });
     </script>
   </body>
 </html>
