@@ -232,28 +232,19 @@
                       $("#live_node_list").empty();
 
                       // parse the list of nodes
-                      searchString = "[";
-                      start = data.indexOf(searchString);
-                      if (start >  - 1) {
-                          end = data.indexOf(",", start);
+		      var tempString = data.substring(1,data.length-1);
+                      var nodeArray = tempString.split(",");
 
-                          if (end ==  - 1) {
-                              end = data.indexOf("]", start);
-                          }
-
-                          var nodeValue = data.substring(start + searchString.length, end);
-                          console.log("Node value is " + nodeValue);
-
-                          // add the value to the list 
-                          if (nodeValue.length > 0) {
-                              var optionString = "<option value='" + nodeValue + "'>" + nodeValue + "</option>";
-                          }
-                          else {
-                              var optionString = "<option value='NA'>No additional nodes found</option>";
-
-                          }
-                          $("#live_node_list").append(optionString);
-                      }
+                          for (var i=0; i < nodeArray.length; i++) {
+                              var nodeValue = nodeArray[i];
+                              if (nodeValue == "" || nodeValue.length == 0) {
+                                  var optionString = "<option value='NA'>No additional nodes found</option>";
+                              } else { 
+                                  var optionString = "<option value='" + nodeArray[i]+ "'>" + nodeArray[i] + "</option>";
+                              }
+                              $("#live_node_list").append(optionString);
+                         };
+		      
 
                       // hide the loading message
                       $('#loadingMessage').hide();
@@ -341,28 +332,19 @@
                       $("#dead_node_list").empty();
 
                       // parse the list of nodes
-                      searchString = "[";
-                      start = data.indexOf(searchString);
-                      if (start >  - 1) {
-                          end = data.indexOf(",", start);
+		      var tempString = data.substring(1,data.length-1);
+                      var nodeArray = tempString.split(",");
 
-                          if (end ==  - 1) {
-                              end = data.indexOf("]", start);
-                          }
-
-                          var nodeValue = data.substring(start + searchString.length, end);
-                          console.log("Node value is " + nodeValue);
-
-                          // add the value to the list 
-                          if (nodeValue.length > 0) {
-                              var optionString = "<option value='" + nodeValue + "'>" + nodeValue + "</option>";
-                          }
-                          else {
-                              var optionString = "<option value='NA'>No additional nodes found</option>";
-
-                          }
-                          $("#dead_node_list").append(optionString);
-                      }
+                          for (var i=0; i < nodeArray.length; i++) {
+                              var nodeValue = nodeArray[i];
+                              if (nodeValue == "" || nodeValue.length == 0) {
+                                  var optionString = "<option value='NA'>No additional nodes found</option>";
+                              } else { 
+                                  var optionString = "<option value='" + nodeArray[i]+ "'>" + nodeArray[i] + "</option>";
+                              }
+                              $("#dead_node_list").append(optionString);
+                         };
+		      
 
                       // hide the loading message
                       $('#loadingMessage').hide();
@@ -502,8 +484,9 @@
               console.log('Error response=' + xhr.responseText);
           };
 
-          console.log("Sending value " + nodeValue);
-          xhr.send(nodeValue);
+          var tempString = "['" + nodeValue + "']";
+          console.log("Sending value " + tempString);
+          xhr.send(tempString);
       };
 
       // This function submits an HTTP request to remove a node
@@ -525,8 +508,9 @@
               console.log('Error response=' + xhr.responseText);
           };
 
-          console.log("Sending value " + nodeValue);
-          xhr.send(nodeValue);
+          var tempString = "['" + nodeValue + "']";
+          console.log("Sending value " + tempString);
+          xhr.send(tempString);
       };
     </script>
   </head>
